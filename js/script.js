@@ -1,3 +1,12 @@
+let usuario = null;
+
+window.onload = function () {
+    usuario = prompt("Introduce tu nombre:");
+    if (!usuario || usuario.trim() === "") {
+        usuario = "Anonimo";
+    }
+};
+
 let clicks = 0;
 
 const boton = document.getElementById("botonMisterioso");
@@ -21,10 +30,13 @@ function misterio() {
     const accion = acciones[Math.floor(Math.random() * acciones.length)];
     accion();
 
+    registrarEvento(accion.name);  // ← ESTA ES LA LÍNEA QUE FALTABA
+
     cambiarColorBoton();
     moverBoton();
     animarBoton();
 }
+
 
 function cambiarColorBoton() {
     const colores = [
@@ -228,4 +240,18 @@ function aplicarContrasteAutomatico(urlImagen) {
             });
         }
     };
+}
+function registrarEvento(evento) {
+    fetch("/log", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            usuario: usuario,
+            evento: evento
+        })
+    })
+        .then(r => console.log("Evento enviado:", evento))
+        .catch(err => console.error("Error enviando evento:", err));
 }
