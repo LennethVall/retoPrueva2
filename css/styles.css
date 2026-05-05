@@ -1,34 +1,73 @@
-/* Fondo general */
 body {
-    background: transparent !important;
-    background-image: none !important;
-    background-size: cover !important;
-    background-position: center !important;
-    background-repeat: no-repeat !important;
+    margin: 0;
+    min-height: 100vh;
+    overflow: hidden;
+    position: relative;
+
+    background-color: #f4f4f4;
+    background-image: none;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    font-family: Arial, sans-serif;
 }
 
+.contador-box {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    text-align: right;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(4px);
+}
 
-
-/* Texto del resultado del backend */
-#resultado {
+#contador {
     font-size: 2rem;
-    text-align: center;
+    font-weight: bold;
 }
 
-/* Contenedor de imágenes o frases aleatorias */
+#resultado {
+    position: absolute;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    font-size: 2rem;
+    z-index: 1000;
+}
+
+#imagenRandom {
+    position: absolute;
+    top: 180px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    z-index: 1000;
+}
+
 #imagenRandom img {
-    max-width: 300px;
-    border-radius: 10px;
-    margin-top: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-width: 320px;
+    max-height: 320px;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
     animation: aparecer 0.4s ease;
 }
 
-#imagenRandom div {
+#imagenRandom .frase {
+    display: inline-block;
+    padding: 16px 22px;
+    border-radius: 14px;
+    font-size: 1.5rem;
+    font-weight: 600;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(4px);
     animation: aparecer 0.4s ease;
 }
 
-/* Animación suave al aparecer */
 @keyframes aparecer {
     from {
         opacity: 0;
@@ -40,40 +79,43 @@ body {
     }
 }
 
-/* Botón misterioso */
-#botonMisterioso {
-    transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-/* Efecto al hacer click */
-#botonMisterioso:active {
-    transform: scale(0.95);
-}
-/* El botón siempre por encima */
 #botonMisterioso {
     position: absolute;
     z-index: 9999;
-    transition: top 0.6s ease, left 0.6s ease, right 0.6s ease, bottom 0.6s ease;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition:
+            top 0.6s ease,
+            left 0.6s ease,
+            right 0.6s ease,
+            bottom 0.6s ease,
+            background-color 0.3s ease,
+            transform 0.2s ease;
 }
 
-/* Estela luminosa */
+#botonMisterioso:active {
+    transform: scale(0.95);
+}
+
 #botonMisterioso::after {
     content: "";
     position: absolute;
-    width: 120%;
-    height: 120%;
-    top: -10%;
-    left: -10%;
+    width: 130%;
+    height: 130%;
+    top: -15%;
+    left: -15%;
     border-radius: 50%;
-    background: radial-gradient(rgba(255,255,255,0.4), rgba(255,255,255,0));
+    background: radial-gradient(rgba(255,255,255,0.45), rgba(255,255,255,0));
     opacity: 0;
     transition: opacity 0.4s ease;
+    pointer-events: none;
 }
 
-/* Cuando se mueve, la estela aparece */
 #botonMisterioso.moving::after {
     opacity: 1;
 }
+
 .text-blanco-borde-negro {
     color: white !important;
     text-shadow:

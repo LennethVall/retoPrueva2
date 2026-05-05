@@ -1,12 +1,16 @@
 let clicks = 0;
 
+const boton = document.getElementById("botonMisterioso");
+const contador = document.getElementById("contador");
+const resultado = document.getElementById("resultado");
+const imagenRandom = document.getElementById("imagenRandom");
+
+boton.addEventListener("click", misterio);
+
 function misterio() {
-
-    // 1. Contador
     clicks++;
-    document.getElementById("contador").innerText = clicks;
+    contador.innerText = clicks;
 
-    // 2. Lista de acciones aleatorias (solo una por click)
     const acciones = [
         cambiarFondo,
         reproducirSonido,
@@ -15,60 +19,100 @@ function misterio() {
     ];
 
     const accion = acciones[Math.floor(Math.random() * acciones.length)];
-    accion(); // Ejecuta una acción aleatoria
+    accion();
 
-    // 3. Cambiar color del botón
-    const boton = document.getElementById("botonMisterioso");
-    const colores = ["btn-primary", "btn-success", "btn-danger", "btn-warning", "btn-info", "btn-dark"];
+    cambiarColorBoton();
+    moverBoton();
+    animarBoton();
+}
+
+function cambiarColorBoton() {
+    const colores = [
+        "btn-primary",
+        "btn-success",
+        "btn-danger",
+        "btn-warning",
+        "btn-info",
+        "btn-dark"
+    ];
+
     boton.classList.remove(...colores);
     boton.classList.add(colores[clicks % colores.length]);
-
-    // 4. Llamada al backend
-    fetch("/misterio")
-        .then(r => r.text())
-        .then(t => {
-            document.getElementById("resultado").innerText = t;
-        });
-
-    // 5. Efecto de zoom rápido
-    boton.style.transform = "scale(1.1)";
-    setTimeout(() => boton.style.transform = "scale(1)", 150);
 }
 
+function animarBoton() {
+    boton.style.transform = "scale(1.1)";
+    setTimeout(() => {
+        boton.style.transform = "scale(1)";
+    }, 150);
+}
 
-// ----------------------
-// ACCIONES ALEATORIAS
-// ----------------------
+function moverBoton() {
+    boton.classList.add("moving");
 
-// 28 fondos numerados (.jpg)
+    const posiciones = [
+        { top: "20px", left: "20px", right: "auto", bottom: "auto" },
+        { top: "20px", right: "20px", left: "auto", bottom: "auto" },
+        { bottom: "20px", left: "20px", top: "auto", right: "auto" },
+        { bottom: "20px", right: "20px", top: "auto", left: "auto" }
+    ];
+
+    const pos = posiciones[Math.floor(Math.random() * posiciones.length)];
+
+    boton.style.top = pos.top;
+    boton.style.bottom = pos.bottom;
+    boton.style.left = pos.left;
+    boton.style.right = pos.right;
+
+    setTimeout(() => {
+        boton.classList.remove("moving");
+    }, 600);
+}
+
 function cambiarFondo() {
     const index = Math.floor(Math.random() * 28) + 1;
-    const url = `/background/background${index}.jpg`;
+    const posiblesRutas = [
+        `background/background${index}.jpg`,
+        `background/background${index}.png`
+    ];
 
-    document.body.style.backgroundImage = `url('${url}')`;
-    document.body.style.backgroundSize = "cover";
-    document.body.style.backgroundPosition = "center";
+    cargarPrimeraImagenValida(
+        posiblesRutas,
+        function (urlValida) {
+            document.body.style.backgroundImage = `url('${urlValida}')`;
+            document.body.style.backgroundSize = "cover";
+            document.body.style.backgroundPosition = "center";
+            document.body.style.backgroundRepeat = "no-repeat";
 
-    aplicarContrasteAutomatico(url);
-
-    moverBoton();
+            aplicarContrasteAutomatico(urlValida);
+            resultado.innerText = "¡Fondo cambiado!";
+        },
+        function () {
+            resultado.innerText = "No se encontró ningún fondo válido.";
+        }
+    );
 }
 
-// 28 sonidos numerados (.mp3)
-function reproducirSonido() {
-    const index = Math.floor(Math.random() * 28) + 1;
-    const audio = new Audio(`sounds/sound${index}.mp3`);
-    audio.play();
-}
-
-// 28 imágenes numeradas (.png)
 function mostrarImagen() {
     const index = Math.floor(Math.random() * 28) + 1;
-    document.getElementById("imagenRandom").innerHTML =
-        `<img src="img/img${index}.png" alt="Random">`;
+    const posiblesRutas = [
+        `img/img${index}.png`,
+        `img/img${index}.jpg`,
+        `img/img${index}.jpeg`
+    ];
+
+    cargarPrimeraImagenValida(
+        posiblesRutas,
+        function (urlValida) {
+            imagenRandom.innerHTML = `<img src="${urlValida}" alt="Imagen aleatoria">`;
+            resultado.innerText = "¡Ha aparecido una imagen!";
+        },
+        function () {
+            resultado.innerText = "No se encontró ninguna imagen válida.";
+        }
+    );
 }
 
-// Tus 28 frases
 function mostrarFrase() {
     const frases = [
         "Nunca sabes lo que pasará al hacer click.",
@@ -102,47 +146,54 @@ function mostrarFrase() {
     ];
 
     const frase = frases[Math.floor(Math.random() * frases.length)];
-    document.getElementById("imagenRandom").innerHTML =
-        `<div class="fs-4 fw-semibold">${frase}</div>`;
+    imagenRandom.innerHTML = `<div class="frase">${frase}</div>`;
+    resultado.innerText = "¡Ha aparecido una frase!";
 }
-function moverBoton() {
-    const boton = document.getElementById("botonMisterioso");
 
-    // Activar estela
-    boton.classList.add("moving");
+function reproducirSonido() {
+    const index = Math.floor(Math.random() * 28) + 1;
+    const audio = new Audio(`sounds/sound${index}.mp3`);
 
-    // Lista de posiciones posibles
-    const posiciones = [
-        { top: "20px", left: "20px" },                // esquina superior izquierda
-        { top: "20px", right: "20px" },               // esquina superior derecha
-        { bottom: "20px", left: "20px" },             // esquina inferior izquierda
-        { bottom: "20px", right: "20px" }             // esquina inferior derecha
-    ];
-
-    // Elegir una posición aleatoria
-    const pos = posiciones[Math.floor(Math.random() * posiciones.length)];
-
-    // Resetear propiedades previas
-    boton.style.top = "";
-    boton.style.bottom = "";
-    boton.style.left = "";
-    boton.style.right = "";
-
-    // Aplicar la nueva posición
-    Object.assign(boton.style, pos);
-
-    // Quitar la estela después del movimiento
-    setTimeout(() => {
-        boton.classList.remove("moving");
-    }, 600);
+    audio.play()
+        .then(() => {
+            resultado.innerText = "¡Suena un audio!";
+        })
+        .catch(() => {
+            resultado.innerText = "No se pudo reproducir el sonido.";
+        });
 }
+
+function cargarPrimeraImagenValida(rutas, onSuccess, onError) {
+    let i = 0;
+
+    function probarSiguiente() {
+        if (i >= rutas.length) {
+            onError();
+            return;
+        }
+
+        const img = new Image();
+
+        img.onload = function () {
+            onSuccess(rutas[i]);
+        };
+
+        img.onerror = function () {
+            i++;
+            probarSiguiente();
+        };
+
+        img.src = rutas[i];
+    }
+
+    probarSiguiente();
+}
+
 function aplicarContrasteAutomatico(urlImagen) {
     const img = new Image();
     img.src = urlImagen;
-    img.crossOrigin = "anonymous";
 
     img.onload = function () {
-        // Crear un canvas temporal para analizar la imagen
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
 
@@ -151,34 +202,26 @@ function aplicarContrasteAutomatico(urlImagen) {
 
         ctx.drawImage(img, 0, 0);
 
-        // Obtener datos de píxeles
         const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 
-        let r, g, b, avg;
         let total = 0;
 
-        // Muestreo cada 20 píxeles para no saturar
         for (let i = 0; i < data.length; i += 80) {
-            r = data[i];
-            g = data[i + 1];
-            b = data[i + 2];
-            avg = (r + g + b) / 3;
-            total += avg;
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            total += (r + g + b) / 3;
         }
 
         const luminosidad = total / (data.length / 80);
-
-        // Seleccionar estilo según luminosidad
-        const elementos = document.querySelectorAll("#contador, #resultado, #imagenRandom");
+        const elementos = document.querySelectorAll("#contador, #resultado, #imagenRandom, .contador-box");
 
         if (luminosidad < 128) {
-            // Fondo oscuro → texto claro
             elementos.forEach(el => {
                 el.classList.remove("text-negro-borde-blanco");
                 el.classList.add("text-blanco-borde-negro");
             });
         } else {
-            // Fondo claro → texto oscuro
             elementos.forEach(el => {
                 el.classList.remove("text-blanco-borde-negro");
                 el.classList.add("text-negro-borde-blanco");
