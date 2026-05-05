@@ -49,13 +49,10 @@ function cambiarFondo() {
     document.body.style.backgroundSize = "cover";
     document.body.style.backgroundPosition = "center";
 
-    // Aplicar contraste automático   aplicarContrasteAutomatico(url);
+    aplicarContrasteAutomatico(url);
 
-    // Mover el botón cuando cambia el fondo
     moverBoton();
 }
-
-
 
 // 28 sonidos numerados (.mp3)
 function reproducirSonido() {
