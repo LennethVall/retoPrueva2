@@ -4,6 +4,8 @@ import model.LogEvento
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import java.io.File
+import java.sql.Connection
+import java.sql.DriverManager
 import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
@@ -14,50 +16,79 @@ import javax.xml.validation.SchemaFactory
 
 object LogService {
 
-    private val xmlFile = File("build/resources/main/data/eventos.xml")
+    // Rutas (Asegúrate de que las carpetas existan en resources)
+    private val dbFile = File("data.db")
+    private val xmlFile = File("src/main/resources/data/eventos.xml")
+    private val xsdFile = File("src/main/resources/data/eventos.xsd")
+    private val xsltFile = File("src/main/resources/data/xslt/resumen.xslt")
 
-    private val xsdFile = File("build/resources/main/data/eventos.xsd")
+    init {
+        // Inicializar SQLite
+        Class.forName("org.xerial.sqlite-jdbc")
+        conectar().use { conn ->
+            val sql = """
+                CREATE TABLE IF NOT EXISTS logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    usuario TEXT,
+                    evento TEXT,
+                    estimulo TEXT,
+                    tiempoReaccionMs INTEGER,
+                    fecha TEXT
+                )
+            """.trimIndent()
+            conn.createStatement().execute(sql)
+        }
+    }
 
+    private fun conectar(): Connection = DriverManager.getConnection("jdbc:sqlite:${dbFile.absolutePath}")
 
     fun registrarEvento(log: LogEvento) {
-        val doc = cargarDocumento()
+        // 1. PERSISTENCIA EN SQLITE (Historial)
+        conectar().use { conn ->
+            val sql = "INSERT INTO logs (usuario, evento) VALUES (?, ?)"
+            val pstmt = conn.prepareStatement(sql)
+            pstmt.setString(1, log.usuario)
+            pstmt.setString(2, log.evento)
+            pstmt.setString(3, log.estimulo)
+            pstmt.setLong(4, log.tiempoReaccionMs)
+            pstmt.setString(5, log.fecha)
+            pstmt.executeUpdate()
+        }
 
+        // 2. PERSISTENCIA EN XML (Resumen acumulado)
+        val doc = cargarDocumento()
         val root = doc.documentElement
 
-        // buscar usuario
-        val usuarios = root.getElementsByTagName("usuario")
-        var usuarioElem: Element? = null
-        for (i in 0 until usuarios.length) {
-            val u = usuarios.item(i) as Element
-            if (u.getAttribute("nombre") == log.usuario) {
-                usuarioElem = u
-                break
-            }
-        }
-        if (usuarioElem == null) {
-            usuarioElem = doc.createElement("usuario")
-            usuarioElem.setAttribute("nombre", log.usuario)
-            root.appendChild(usuarioElem)
+        // Lógica de Usuario: ¿Existe ya?
+        var usuarioElem = root.childNodes.let { list ->
+            (0 until list.length).map { list.item(it) }
+                .filterIsInstance<Element>()
+                .find { it.getAttribute("nombre") == log.usuario }
         }
 
-        // buscar evento
-        val eventos = usuarioElem!!.getElementsByTagName("evento")
-        var eventoElem: Element? = null
-        for (i in 0 until eventos.length) {
-            val e = eventos.item(i) as Element
-            if (e.getAttribute("tipo") == log.evento) {
-                eventoElem = e
-                break
-            }
+        if (usuarioElem == null) {
+            val nuevoUsuario = doc.createElement("usuario")
+            nuevoUsuario.setAttribute("nombre", log.usuario)
+            root.appendChild(nuevoUsuario)
+            usuarioElem = nuevoUsuario
         }
+
+        // Lógica de Evento: ¿Existe ya para este usuario?
+        var eventoElem = usuarioElem!!.childNodes.let { list -> // Usamos !! porque ya sabemos que existe
+            (0 until list.length).map { list.item(it) }
+                .filterIsInstance<Element>()
+                .find { it.getAttribute("tipo") == log.evento }
+        }
+
         if (eventoElem == null) {
-            eventoElem = doc.createElement("evento")
-            eventoElem.setAttribute("tipo", log.evento)
-            eventoElem.setAttribute("repeticiones", "1")
-            usuarioElem.appendChild(eventoElem)
+            val nuevoEvento = doc.createElement("evento")
+            nuevoEvento.setAttribute("tipo", log.evento)
+            nuevoEvento.setAttribute("repeticiones", "1")
+            usuarioElem.appendChild(nuevoEvento)
         } else {
-            val rep = eventoElem.getAttribute("repeticiones").toIntOrNull() ?: 0
-            eventoElem.setAttribute("repeticiones", (rep + 1).toString())
+            // Si ya existe, subimos las repeticiones
+            val reps = eventoElem.getAttribute("repeticiones").toIntOrNull() ?: 0
+            eventoElem.setAttribute("repeticiones", (reps + 1).toString())
         }
 
         guardarYValidar(doc)
@@ -66,27 +97,33 @@ object LogService {
     private fun cargarDocumento(): Document {
         if (!xmlFile.exists()) {
             xmlFile.parentFile.mkdirs()
-            xmlFile.writeText("""<eventos></eventos>""")
+            xmlFile.writeText("<?xml version=\"1.0\" encoding=\"UTF-8\"?><eventos></eventos>")
         }
-        val factory = DocumentBuilderFactory.newInstance()
-        factory.isNamespaceAware = true
-        val builder = factory.newDocumentBuilder()
-        return builder.parse(xmlFile)
+        val factory = DocumentBuilderFactory.newInstance().apply { isNamespaceAware = true }
+        return factory.newDocumentBuilder().parse(xmlFile)
     }
 
     private fun guardarYValidar(doc: Document) {
-        // guardar
-        val tf = TransformerFactory.newInstance()
-        val transformer = tf.newTransformer().apply {
+        // Guardar físicamente
+        val transformer = TransformerFactory.newInstance().newTransformer().apply {
             setOutputProperty(OutputKeys.INDENT, "yes")
             setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2")
         }
         transformer.transform(DOMSource(doc), StreamResult(xmlFile))
 
-        // validar
-        val schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-        val schema = schemaFactory.newSchema(xsdFile)
-        val validator = schema.newValidator()
-        validator.validate(javax.xml.transform.stream.StreamSource(xmlFile))
+        // Validar con XSD
+        if (xsdFile.exists()) {
+            val schema = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema(xsdFile)
+            schema.newValidator().validate(javax.xml.transform.stream.StreamSource(xmlFile))
+            println("✅ XML Validado correctamente")
+        }
+    }
+
+    fun generarInformeHtml() {
+        val outputFile = File("informe_resultados.html")
+        if (xmlFile.exists() && xsltFile.exists()) {
+            val transformer = TransformerFactory.newInstance().newTransformer(javax.xml.transform.stream.StreamSource(xsltFile))
+            transformer.transform(javax.xml.transform.stream.StreamSource(xmlFile), StreamResult(outputFile))
+        }
     }
 }

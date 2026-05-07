@@ -24,5 +24,27 @@
 
 <script src="js/script.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<button class="btn btn-outline-light rounded-circle shadow" type="button"
+        data-bs-toggle="offcanvas" data-bs-target="#panelResultados"
+        style="position: fixed; bottom: 20px; left: 20px; z-index: 10001; backdrop-filter: blur(5px);">
+    📊
+</button>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="panelResultados"
+     style="background: rgba(0,0,0,0.8); color: white; backdrop-filter: blur(10px); width: 350px;">
+    <div class="offcanvas-header border-bottom border-secondary">
+        <h5 class="offcanvas-title">📈 Mis Estadísticas</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body" id="contenidoPanel">
+        <div class="text-center">
+            <div class="spinner-border text-info" role="status"></div>
+            <p>Cargando datos del servidor...</p>
+        </div>
+    </div>
+    <div class="p-3 border-top border-secondary">
+        <a href="/generar-informe" target="_blank" class="btn btn-info w-100">Ver Informe Completo (PDF/HTML)</a>
+    </div>
+</div>
 </body>
 </html>
