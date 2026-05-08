@@ -2,12 +2,12 @@ import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
-import io.ktor.server.http.content.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.http.content.*
 import model.LogEvento
 import service.LogService
 import java.io.File
@@ -15,65 +15,109 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 fun main() {
-    fun main() {
-        // 1. Forzamos la creación de la estructura (la tabla)
-        LogService.registrarEvento(LogEvento("Sistema", "Inicio", "Prueba", 0))
 
-        // 2. Metemos un par de datos falsos para que el informe tenga algo que leer
-        LogService.registrarEvento(LogEvento("Pepe", "Clic", "Imagen1", 150))
-        LogService.registrarEvento(LogEvento("Maria", "Clic", "Sonido2", 300))
+    // 🔹 Datos de prueba (opcional)
+    LogService.registrarEvento(LogEvento("Sistema", "Inicio", "Prueba", 0))
+    LogService.registrarEvento(LogEvento("Pepe", "Clic", "Imagen1", 150))
+    LogService.registrarEvento(LogEvento("Maria", "Clic", "Sonido2", 300))
 
-        println("✅ Datos de prueba insertados. Deberías ver el archivo data.db ahora.")
+    println("✅ Servidor iniciando...")
 
-        embeddedServer(Netty, port = 8080) {
-            // ... tu configuración ...
-        }.start(wait = true)
-    }
     embeddedServer(Netty, port = 8080) {
-        // Instalamos Jackson para que el POST funcione
+
         install(ContentNegotiation) {
             jackson()
         }
 
         routing {
-            // 1. Servir archivos de la raíz (index, js, css, img...)
+
+            // =========================
+            // 📦 ARCHIVOS ESTÁTICOS
+            // =========================
             staticFiles("/", File(".")) {
                 default("index.html")
             }
 
-            // 2. Endpoint para el LOG (Tu JS hace POST aquí)
+            // =========================
+            // 📊 REGISTRAR EVENTO
+            // =========================
             post("/log") {
                 try {
                     val log = call.receive<LogEvento>()
                     LogService.registrarEvento(log)
+
                     call.respond(HttpStatusCode.OK, "Evento registrado")
+
                 } catch (e: Exception) {
-                    // Si algo falla al recibir el JSON, nos avisa aquí
                     call.respond(HttpStatusCode.BadRequest, "Error en el formato del log")
                 }
             }
 
-            // 3. Endpoint para generar el informe y verlo directamente
+            // =========================
+            // 📈 ESTADÍSTICAS USUARIO
+            // =========================
+            get("/stats/{usuario}") {
+                val usuario = call.parameters["usuario"] ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    "Usuario no válido"
+                )
+
+                call.respond(LogService.obtenerEstadisticasUsuario(usuario))
+            }
+
+            // =========================
+            // 🎯 MEJOR POR ESTÍMULO
+            // =========================
+            get("/stats/estimulos/{usuario}") {
+                val usuario = call.parameters["usuario"] ?: return@get call.respond(
+                    HttpStatusCode.BadRequest,
+                    "Usuario no válido"
+                )
+
+                call.respond(LogService.mejorPorEstimulo(usuario))
+            }
+
+            // =========================
+            // 🏆 RANKING TOP 3
+            // =========================
+            get("/ranking") {
+                call.respond(LogService.rankingTop3())
+            }
+
+            // =========================
+            // 📄 GENERAR INFORME HTML
+            // =========================
             get("/generar-informe") {
                 LogService.generarInformeHtml()
+
                 val file = File("informe_resultados.html")
+
                 if (file.exists()) {
                     call.respondFile(file)
                 } else {
-                    call.respondText("Error al generar el archivo", status = HttpStatusCode.InternalServerError)
+                    call.respondText(
+                        "Error generando informe",
+                        status = HttpStatusCode.InternalServerError
+                    )
                 }
             }
 
-            // 4. Ver el XML en crudo si quieres
+            // =========================
+            // 📄 VER XML
+            // =========================
             get("/ver-xml") {
                 val path = Paths.get("src/main/resources/data/eventos.xml")
+
                 if (Files.exists(path)) {
-                    val xml = Files.readString(path)
-                    call.respondText(xml, ContentType.Text.Xml)
+                    call.respondText(
+                        Files.readString(path),
+                        ContentType.Text.Xml
+                    )
                 } else {
                     call.respond(HttpStatusCode.NotFound, "XML no encontrado")
                 }
             }
         }
+
     }.start(wait = true)
 }

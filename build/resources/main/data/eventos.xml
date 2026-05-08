@@ -1,4 +1,138 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<eventos xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="eventos.xsd">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<eventos xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="eventos.xsd">
+                      
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <usuario nombre="Sistema">
+                                            
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <evento repeticiones="1" tipo="Inicio"/>
+                                          
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  </usuario>
+                    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <usuario nombre="Pepe">
+                                        
+    
+    
+    
+    
+    
+    
+    
+    
+    <evento repeticiones="1" tipo="Clic"/>
+                                      
+  
+  
+  
+  
+  
+  
+  
+  
+  </usuario>
+                  
+  
+  
+  
+  
+  
+  
+  
+  
+  <usuario nombre="Maria">
+                                    
+    
+    
+    
+    
+    
+    
+    
+    <evento repeticiones="1" tipo="Clic"/>
+                                  
+  
+  
+  
+  
+  
+  
+  
+  </usuario>
+                
+  
+  
+  
+  
+  
+  
+  
+  <usuario nombre="Anonimo">
+                                
+    
+    
+    
+    
+    
+    
+    <evento repeticiones="3" tipo="mostrarFrase"/>
+                              
+    
+    
+    
+    
+    
+    
+    <evento repeticiones="3" tipo="mostrarImagen"/>
+                          
+  
+  
+  
+  
+    
+    <evento repeticiones="1" tipo="reproducirSonido"/>
+      
+    <evento repeticiones="1" tipo="cambiarFondo"/>
+  </usuario>
+              
+
+
+
+
+
+
 </eventos>

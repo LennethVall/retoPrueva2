@@ -1,129 +1,159 @@
 package service
 
 import model.LogEvento
-import org.w3c.dom.Document
-import org.w3c.dom.Element
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
-import javax.xml.XMLConstants
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.transform.OutputKeys
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.stream.StreamResult
-import javax.xml.validation.SchemaFactory
 
 object LogService {
 
-    // Rutas (Asegúrate de que las carpetas existan en resources)
+    // =========================
+    // BASE DE DATOS
+    // =========================
     private val dbFile = File("data.db")
-    private val xmlFile = File("src/main/resources/data/eventos.xml")
-    private val xsdFile = File("src/main/resources/data/eventos.xsd")
-    private val xsltFile = File("src/main/resources/data/xslt/resumen.xslt")
 
     init {
-        // Inicializar SQLite
-        Class.forName("org.xerial.sqlite-jdbc")
+        Class.forName("org.sqlite.JDBC")
+
         conectar().use { conn ->
-            val sql = """
+            conn.createStatement().execute(
+                """
                 CREATE TABLE IF NOT EXISTS logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     usuario TEXT,
                     evento TEXT,
                     estimulo TEXT,
-                    tiempoReaccionMs INTEGER,
-                    fecha TEXT
+                    tiempoReaccionMs INTEGER
                 )
-            """.trimIndent()
-            conn.createStatement().execute(sql)
+                """.trimIndent()
+            )
         }
     }
 
-    private fun conectar(): Connection = DriverManager.getConnection("jdbc:sqlite:${dbFile.absolutePath}")
+    private fun conectar(): Connection =
+        DriverManager.getConnection("jdbc:sqlite:${dbFile.absolutePath}")
 
+    // =========================
+    // GUARDAR LOG
+    // =========================
     fun registrarEvento(log: LogEvento) {
-        // 1. PERSISTENCIA EN SQLITE (Historial)
         conectar().use { conn ->
-            val sql = "INSERT INTO logs (usuario, evento) VALUES (?, ?)"
-            val pstmt = conn.prepareStatement(sql)
-            pstmt.setString(1, log.usuario)
-            pstmt.setString(2, log.evento)
-            pstmt.setString(3, log.estimulo)
-            pstmt.setLong(4, log.tiempoReaccionMs)
-            pstmt.setString(5, log.fecha)
-            pstmt.executeUpdate()
-        }
+            val sql = """
+                INSERT INTO logs (usuario, evento, estimulo, tiempoReaccionMs)
+                VALUES (?, ?, ?, ?)
+            """.trimIndent()
 
-        // 2. PERSISTENCIA EN XML (Resumen acumulado)
-        val doc = cargarDocumento()
-        val root = doc.documentElement
-
-        // Lógica de Usuario: ¿Existe ya?
-        var usuarioElem = root.childNodes.let { list ->
-            (0 until list.length).map { list.item(it) }
-                .filterIsInstance<Element>()
-                .find { it.getAttribute("nombre") == log.usuario }
-        }
-
-        if (usuarioElem == null) {
-            val nuevoUsuario = doc.createElement("usuario")
-            nuevoUsuario.setAttribute("nombre", log.usuario)
-            root.appendChild(nuevoUsuario)
-            usuarioElem = nuevoUsuario
-        }
-
-        // Lógica de Evento: ¿Existe ya para este usuario?
-        var eventoElem = usuarioElem!!.childNodes.let { list -> // Usamos !! porque ya sabemos que existe
-            (0 until list.length).map { list.item(it) }
-                .filterIsInstance<Element>()
-                .find { it.getAttribute("tipo") == log.evento }
-        }
-
-        if (eventoElem == null) {
-            val nuevoEvento = doc.createElement("evento")
-            nuevoEvento.setAttribute("tipo", log.evento)
-            nuevoEvento.setAttribute("repeticiones", "1")
-            usuarioElem.appendChild(nuevoEvento)
-        } else {
-            // Si ya existe, subimos las repeticiones
-            val reps = eventoElem.getAttribute("repeticiones").toIntOrNull() ?: 0
-            eventoElem.setAttribute("repeticiones", (reps + 1).toString())
-        }
-
-        guardarYValidar(doc)
-    }
-
-    private fun cargarDocumento(): Document {
-        if (!xmlFile.exists()) {
-            xmlFile.parentFile.mkdirs()
-            xmlFile.writeText("<?xml version=\"1.0\" encoding=\"UTF-8\"?><eventos></eventos>")
-        }
-        val factory = DocumentBuilderFactory.newInstance().apply { isNamespaceAware = true }
-        return factory.newDocumentBuilder().parse(xmlFile)
-    }
-
-    private fun guardarYValidar(doc: Document) {
-        // Guardar físicamente
-        val transformer = TransformerFactory.newInstance().newTransformer().apply {
-            setOutputProperty(OutputKeys.INDENT, "yes")
-            setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2")
-        }
-        transformer.transform(DOMSource(doc), StreamResult(xmlFile))
-
-        // Validar con XSD
-        if (xsdFile.exists()) {
-            val schema = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema(xsdFile)
-            schema.newValidator().validate(javax.xml.transform.stream.StreamSource(xmlFile))
-            println("✅ XML Validado correctamente")
+            val stmt = conn.prepareStatement(sql)
+            stmt.setString(1, log.usuario)
+            stmt.setString(2, log.evento)
+            stmt.setString(3, log.estimulo)
+            stmt.setLong(4, log.tiempoReaccionMs)
+            stmt.executeUpdate()
         }
     }
 
-    fun generarInformeHtml() {
-        val outputFile = File("informe_resultados.html")
-        if (xmlFile.exists() && xsltFile.exists()) {
-            val transformer = TransformerFactory.newInstance().newTransformer(javax.xml.transform.stream.StreamSource(xsltFile))
-            transformer.transform(javax.xml.transform.stream.StreamSource(xmlFile), StreamResult(outputFile))
+    // =========================
+    // 📊 ESTADÍSTICAS USUARIO
+    // =========================
+    fun obtenerEstadisticasUsuario(usuario: String): Map<String, Any> {
+
+        conectar().use { conn ->
+
+            val stmt = conn.prepareStatement(
+                """
+                SELECT 
+                    AVG(tiempoReaccionMs) as media,
+                    MIN(tiempoReaccionMs) as mejor,
+                    MAX(tiempoReaccionMs) as peor,
+                    COUNT(*) as clicks
+                FROM logs
+                WHERE usuario = ?
+                """.trimIndent()
+            )
+
+            stmt.setString(1, usuario)
+
+            val rs = stmt.executeQuery()
+
+            if (rs.next()) {
+                return mapOf(
+                    "media" to rs.getDouble("media"),
+                    "mejor" to rs.getLong("mejor"),
+                    "peor" to rs.getLong("peor"),
+                    "clicks" to rs.getInt("clicks")
+                )
+            }
         }
+
+        return mapOf(
+            "media" to 0,
+            "mejor" to 0,
+            "peor" to 0,
+            "clicks" to 0
+        )
+    }
+
+    // =========================
+    // 🎯 MEJOR POR ESTÍMULO
+    // =========================
+    fun mejorPorEstimulo(usuario: String): Map<String, Long> {
+
+        val resultado = mutableMapOf<String, Long>()
+
+        conectar().use { conn ->
+
+            val stmt = conn.prepareStatement(
+                """
+                SELECT estimulo, MIN(tiempoReaccionMs) as mejor
+                FROM logs
+                WHERE usuario = ?
+                GROUP BY estimulo
+                """.trimIndent()
+            )
+
+            stmt.setString(1, usuario)
+
+            val rs = stmt.executeQuery()
+
+            while (rs.next()) {
+                resultado[rs.getString("estimulo")] = rs.getLong("mejor")
+            }
+        }
+
+        return resultado
+    }
+
+    // =========================
+    // 🏆 RANKING GLOBAL TOP 3
+    // =========================
+    fun rankingTop3(): List<Map<String, Any>> {
+
+        val lista = mutableListOf<Map<String, Any>>()
+
+        conectar().use { conn ->
+
+            val stmt = conn.createStatement()
+
+            val rs = stmt.executeQuery(
+                """
+                SELECT usuario, AVG(tiempoReaccionMs) as media
+                FROM logs
+                GROUP BY usuario
+                ORDER BY media ASC
+                LIMIT 3
+                """.trimIndent()
+            )
+
+            while (rs.next()) {
+                lista.add(
+                    mapOf(
+                        "usuario" to rs.getString("usuario"),
+                        "media" to rs.getDouble("media")
+                    )
+                )
+            }
+        }
+
+        return lista
     }
 }

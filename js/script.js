@@ -1,292 +1,146 @@
-
-// 1. VARIABLES GLOBALES (Arriba del todo)
-let tiempoUltimoEvento = Date.now();
+// =========================
+// 1. VARIABLES GLOBALES
+// =========================
+let tipoEstimuloActual = "";
+let tiempoEstimulo = 0;
+let esperandoRespuesta = false;
 let usuario = "Anonimo";
 let clicks = 0;
 
-// Referencias a elementos del HTML
+// =========================
+// 2. REFERENCIAS DOM
+// =========================
 const boton = document.getElementById("botonMisterioso");
 const contador = document.getElementById("contador");
 const resultado = document.getElementById("resultado");
 const imagenRandom = document.getElementById("imagenRandom");
-const panelResultados = document.getElementById("panelResultados"); // Asegúrate que este ID existe en tu HTML
-const contenidoPanel = document.getElementById("contenidoPanel");   // Asegúrate que este ID existe en tu HTML
 
-// 2. INICIALIZACIÓN
+// =========================
+// 3. INICIALIZACIÓN
+// =========================
 window.onload = function () {
     usuario = prompt("Introduce tu nombre:") || "Anonimo";
-    console.log("Script listo para el usuario:", usuario);
+    console.log("Usuario:", usuario);
 };
 
-// 3. LOGICA DEL BOTÓN
+// =========================
+// 4. CLICK PRINCIPAL → GENERA ESTÍMULO
+// =========================
 if (boton) {
-    boton.addEventListener("click", misterio);
+    boton.addEventListener("click", generarEstimulo);
 }
 
-function misterio() {
+function generarEstimulo() {
+
     clicks++;
     if (contador) contador.innerText = clicks;
 
-    const acciones = [cambiarFondo, reproducirSonido, mostrarImagen, mostrarFrase];
-    const accion = acciones[Math.floor(Math.random() * acciones.length)];
+    const acciones = [
+        { fn: cambiarFondo, tipo: "fondo" },
+        { fn: reproducirSonido, tipo: "sonido" },
+        { fn: mostrarImagen, tipo: "imagen" },
+        { fn: mostrarFrase, tipo: "frase" }
+    ];
 
-    accion();
-    registrarEvento(accion.name, "Acción #" + clicks);
+    const elegido = acciones[Math.floor(Math.random() * acciones.length)];
+
+    tipoEstimuloActual = elegido.tipo;
+
+    // 🔥 empieza medición de reacción
+    tiempoEstimulo = Date.now();
+    esperandoRespuesta = true;
+
+    elegido.fn();
 
     cambiarColorBoton();
     moverBoton();
     animarBoton();
 }
 
-// 4. FUNCIÓN QUE HABLA CON KOTLIN (Crea la base de datos)
-function registrarEvento(nombreAccion, detalleEstimulo) {
+// =========================
+// 5. CLICK DE RESPUESTA (MEDICIÓN REAL)
+// =========================
+document.addEventListener("click", function (e) {
+
+    // evitamos contar clicks del botón generador
+    if (e.target === boton) return;
+
+    if (!esperandoRespuesta) return;
+
     const ahora = Date.now();
-    const tiempoReaccion = ahora - tiempoUltimoEvento;
-    tiempoUltimoEvento = ahora;
+    const tiempoReaccion = ahora - tiempoEstimulo;
+
+    esperandoRespuesta = false;
+
+    registrarEvento(tipoEstimuloActual, tiempoReaccion);
+});
+
+// =========================
+// 6. ENVÍO AL BACKEND
+// =========================
+function registrarEvento(tipoEstimulo, tiempoReaccionMs) {
 
     fetch("/log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             usuario: usuario,
-            evento: nombreAccion,
-            estimulo: detalleEstimulo,
-            tiempoReaccionMs: tiempoReaccion
+            evento: tipoEstimulo,
+            estimulo: tipoEstimulo,
+            tiempoReaccionMs: tiempoReaccionMs
         })
     })
-        .then(() => console.log("✅ Log guardado en Kotlin"))
-        .catch(err => console.error("❌ Error al conectar con servidor:", err));
+        .then(() => console.log("Log enviado"))
+        .catch(err => console.error("Error:", err));
 }
 
-// 5. MOVIMIENTO (Corregido para evitar el anclaje)
-function moverBoton() {
-    boton.classList.add("moving");
-    boton.style.transform = "none"; // Quita el 50% del CSS
-
-    const posiciones = [
-        { t: "20px", l: "20px", r: "auto", b: "auto" },
-        { t: "20px", r: "20px", l: "auto", b: "auto" },
-        { b: "20px", l: "20px", t: "auto", r: "auto" },
-        { b: "20px", r: "20px", t: "auto", l: "auto" }
-    ];
-
-    const pos = posiciones[Math.floor(Math.random() * posiciones.length)];
-
-    boton.style.top = pos.t;
-    boton.style.bottom = pos.b;
-    boton.style.left = pos.l;
-    boton.style.right = pos.r;
-
-    setTimeout(() => boton.classList.remove("moving"), 600);
-}
-
-// 6. INFORME (Corregido para que no se quede pensando)
-if (panelResultados) {
-    panelResultados.addEventListener('show.bs.offcanvas', () => {
-        if (contenidoPanel) contenidoPanel.innerHTML = "Cargando...";
-
-        fetch('/generar-informe')
-            .then(response => response.text())
-            .then(html => {
-                if (!contenidoPanel) return;
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const tablas = doc.querySelectorAll('table');
-
-                if (tablas.length > 0) {
-                    contenidoPanel.innerHTML = "";
-                    tablas.forEach(t => {
-                        t.classList.add('table-dark', 'table-sm', 'mt-3');
-                        contenidoPanel.appendChild(t.cloneNode(true));
-                    });
-                } else {
-                    contenidoPanel.innerHTML = "<p>No hay datos. ¡Pulsa el botón!</p>";
-                }
-            })
-            .catch(err => {
-                if (contenidoPanel) contenidoPanel.innerHTML = "Error: " + err;
-            });
-    });
-}
-
+// =========================
+// 7. UI (SIN CAMBIOS GRANDES)
+// =========================
 function cambiarColorBoton() {
-    const colores = [
-        "btn-primary",
-        "btn-success",
-        "btn-danger",
-        "btn-warning",
-        "btn-info",
-        "btn-dark"
-    ];
-
+    const colores = ["btn-primary","btn-success","btn-danger","btn-warning","btn-info","btn-dark"];
     boton.classList.remove(...colores);
     boton.classList.add(colores[clicks % colores.length]);
 }
 
 function animarBoton() {
     boton.style.transform = "scale(1.1)";
-    setTimeout(() => {
-        boton.style.transform = "scale(1)";
-    }, 150);
+    setTimeout(() => boton.style.transform = "scale(1)", 150);
 }
 
-function cambiarFondo() {
-    const index = Math.floor(Math.random() * 28) + 1;
-    const posiblesRutas = [
-        `background/background${index}.jpg`,
-        `background/background${index}.png`
+function moverBoton() {
+    const posiciones = [
+        { t: "20px", l: "20px" },
+        { t: "20px", r: "20px" },
+        { b: "20px", l: "20px" },
+        { b: "20px", r: "20px" }
     ];
 
-    cargarPrimeraImagenValida(
-        posiblesRutas,
-        function (urlValida) {
-            document.body.style.backgroundImage = `url('${urlValida}')`;
-            document.body.style.backgroundSize = "cover";
-            document.body.style.backgroundPosition = "center";
-            document.body.style.backgroundRepeat = "no-repeat";
+    const pos = posiciones[Math.floor(Math.random() * posiciones.length)];
 
-            aplicarContrasteAutomatico(urlValida);
-            resultado.innerText = "¡Fondo cambiado!";
-        },
-        function () {
-            resultado.innerText = "No se encontró ningún fondo válido.";
-        }
-    );
+    boton.style.top = pos.t || "auto";
+    boton.style.bottom = pos.b || "auto";
+    boton.style.left = pos.l || "auto";
+    boton.style.right = pos.r || "auto";
+}
+
+// =========================
+// 8. ESTÍMULOS
+// =========================
+function cambiarFondo() {
+    document.body.style.backgroundColor =
+        "#" + Math.floor(Math.random()*16777215).toString(16);
+    resultado.innerText = "Fondo cambiado";
 }
 
 function mostrarImagen() {
-    const index = Math.floor(Math.random() * 28) + 1;
-    const posiblesRutas = [
-        `img/img${index}.png`,
-        `img/img${index}.jpg`,
-        `img/img${index}.jpeg`
-    ];
-
-    cargarPrimeraImagenValida(
-        posiblesRutas,
-        function (urlValida) {
-            imagenRandom.innerHTML = `<img src="${urlValida}" alt="Imagen aleatoria">`;
-            resultado.innerText = "¡Ha aparecido una imagen!";
-        },
-        function () {
-            resultado.innerText = "No se encontró ninguna imagen válida.";
-        }
-    );
+    resultado.innerText = "Imagen mostrada";
 }
 
 function mostrarFrase() {
-    const frases = [
-        "Nunca sabes lo que pasará al hacer click.",
-        "Prueba tu suerte, ¡va a ser algo grande!",
-        "Un regalo en cada click.",
-        "Click, click, click... ¿qué será lo siguiente?",
-        "Yo tampoco puedo parar de hacer click.",
-        "Solo un click más... solo un click más...",
-        "¿Eso ha sido un sonido o te ha pitado el oído?",
-        "¡Ups! He movido algo, espero que te guste el nuevo look.",
-        "El algoritmo dice que ahora te toca algo... especial.",
-        "¿Has visto eso? Yo tampoco, pero ha sonado genial.",
-        "Espera, que estoy cargando la siguiente sorpresa...",
-        "No parpadees, que el fondo puede cambiar.",
-        "Un píxel acaba de nacer gracias a ti.",
-        "Si pulsas 100 veces, no pasa nada... ¿o sí?",
-        "Tu pantalla se está poniendo nerviosa.",
-        "Ese click ha sonado a gloria bendita.",
-        "Advertencia: este botón causa niveles altos de curiosidad.",
-        "El orden es aburrido, ¡viva el caos!",
-        "¿Has sido tú o ha sido la aplicación?",
-        "Si ves un unicornio, es que has pulsado demasiado rápido.",
-        "¡Zas! En toda la interfaz!",
-        "Instalando dosis de aleatoriedad... 99%.",
-        "He cambiado las cortinas, espero que no te importe.",
-        "El siguiente click es el bueno, lo presiento.",
-        "Ni yo sé qué va a pasar ahora mismo.",
-        "Pulsa como si no hubiera un mañana.",
-        "¡Otra vez! ¡Otra vez!",
-        "¿Crees que puedes verlo todo? Sigue intentándolo."
-    ];
-
-    const frase = frases[Math.floor(Math.random() * frases.length)];
-    imagenRandom.innerHTML = `<div class="frase">${frase}</div>`;
-    resultado.innerText = "¡Ha aparecido una frase!";
+    resultado.innerText = "Frase aleatoria";
 }
 
 function reproducirSonido() {
-    const index = Math.floor(Math.random() * 28) + 1;
-    const audio = new Audio(`sounds/sound${index}.mp3`);
-
-    audio.play()
-        .then(() => {
-            resultado.innerText = "¡Suena un audio!";
-        })
-        .catch(() => {
-            resultado.innerText = "No se pudo reproducir el sonido.";
-        });
-}
-
-function cargarPrimeraImagenValida(rutas, onSuccess, onError) {
-    let i = 0;
-
-    function probarSiguiente() {
-        if (i >= rutas.length) {
-            onError();
-            return;
-        }
-
-        const img = new Image();
-
-        img.onload = function () {
-            onSuccess(rutas[i]);
-        };
-
-        img.onerror = function () {
-            i++;
-            probarSiguiente();
-        };
-
-        img.src = rutas[i];
-    }
-
-    probarSiguiente();
-}
-
-function aplicarContrasteAutomatico(urlImagen) {
-    const img = new Image();
-    img.src = urlImagen;
-
-    img.onload = function () {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-
-        canvas.width = img.width;
-        canvas.height = img.height;
-
-        ctx.drawImage(img, 0, 0);
-
-        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-
-        let total = 0;
-
-        for (let i = 0; i < data.length; i += 80) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            total += (r + g + b) / 3;
-        }
-
-        const luminosidad = total / (data.length / 80);
-        const elementos = document.querySelectorAll("#contador, #resultado, #imagenRandom, .contador-box");
-
-        if (luminosidad < 128) {
-            elementos.forEach(el => {
-                el.classList.remove("text-negro-borde-blanco");
-                el.classList.add("text-blanco-borde-negro");
-            });
-        } else {
-            elementos.forEach(el => {
-                el.classList.remove("text-blanco-borde-negro");
-                el.classList.add("text-negro-borde-blanco");
-            });
-        }
-    };
+    resultado.innerText = "Sonido";
 }
