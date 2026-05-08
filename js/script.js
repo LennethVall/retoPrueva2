@@ -203,7 +203,7 @@ function mostrarFrase() {
 
 function reproducirSonido() {
     const index = Math.floor(Math.random() * 28) + 1;
-    const audio = new Audio(`sounds/sound${index}.mp3}`);
+    const audio = new Audio(`sounds/sound${index}.mp3`);
 
     audio.play()
         .then(() => {
