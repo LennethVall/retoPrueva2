@@ -16,7 +16,7 @@ import java.nio.file.Paths
 
 fun main() {
 
-    println("🚀 Iniciando servidor...")
+    println("🚀 Servidor iniciado")
 
     embeddedServer(Netty, port = 8080) {
 
@@ -26,110 +26,60 @@ fun main() {
 
         routing {
 
-            // =========================
-            // 📦 ARCHIVOS ESTÁTICOS
-            // =========================
-            staticFiles("/", File("src/main/resources/public")) {
+            staticFiles("/", File(".")) {
                 default("index.html")
             }
 
-            // =========================
-            // 📩 REGISTRAR EVENTO
-            // =========================
+            // LOG
             post("/log") {
-                try {
-                    val log = call.receive<LogEvento>()
-                    LogService.registrarEvento(log)
-
-                    call.respond(
-                        HttpStatusCode.OK,
-                        mapOf("message" to "Evento registrado")
-                    )
-
-                } catch (e: Exception) {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        mapOf("error" to "Formato de log inválido")
-                    )
-                }
+                val log = call.receive<LogEvento>()
+                LogService.registrarEvento(log)
+                call.respond(HttpStatusCode.OK)
             }
 
-            // =========================
-            // 📊 ESTADÍSTICAS USUARIO
-            // =========================
+            // STATS
             get("/stats/{usuario}") {
-                val usuario = call.parameters["usuario"]
-
-                if (usuario == null) {
-                    call.respond(HttpStatusCode.BadRequest, "Usuario no válido")
-                    return@get
-                }
-
-                call.respond(LogService.obtenerEstadisticasUsuario(usuario))
+                val u = call.parameters["usuario"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+                call.respond(LogService.obtenerEstadisticasUsuario(u))
             }
 
-            // =========================
-            // 🎯 MEJOR POR ESTÍMULO
-            // =========================
+            // ESTÍMULOS
             get("/stats/estimulos/{usuario}") {
-                val usuario = call.parameters["usuario"]
-
-                if (usuario == null) {
-                    call.respond(HttpStatusCode.BadRequest, "Usuario no válido")
-                    return@get
-                }
-
-                call.respond(LogService.mejorPorEstimulo(usuario))
+                val u = call.parameters["usuario"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+                call.respond(LogService.mejorPorEstimulo(u))
             }
 
-            // =========================
-            // 🏆 RANKING GLOBAL TOP 3
-            // =========================
+            // RANKING
             get("/ranking") {
                 call.respond(LogService.rankingTop3())
             }
 
-            // =========================
-            // 📄 GENERAR INFORME (XML + XSLT)
-            // =========================
+            // INFORME HTML
             get("/generar-informe") {
-
-                LogService.generarInformeHtml()
+                try {
+                    LogService.generarInformeHtml()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
 
                 val file = File("informe_resultados.html")
 
                 if (file.exists()) {
                     call.respondFile(file)
                 } else {
-                    call.respondText(
-                        "Error generando informe",
-                        status = HttpStatusCode.InternalServerError
-                    )
+                    call.respondText("Error generando informe")
                 }
             }
 
-            // =========================
-            // 📄 VER XML (DEBUG)
-            // =========================
+            // XML
             get("/ver-xml") {
-
                 val path = Paths.get("src/main/resources/data/eventos.xml")
 
                 if (Files.exists(path)) {
-                    call.respondText(
-                        Files.readString(path),
-                        ContentType.Text.Xml
-                    )
+                    call.respondText(Files.readString(path), ContentType.Text.Xml)
                 } else {
-                    call.respond(HttpStatusCode.NotFound, "XML no encontrado")
+                    call.respond(HttpStatusCode.NotFound)
                 }
-            }
-
-            // =========================
-            // ❤️ HEALTH CHECK
-            // =========================
-            get("/health") {
-                call.respond(mapOf("status" to "ok"))
             }
         }
 

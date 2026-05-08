@@ -42,9 +42,10 @@ object LogService {
         DriverManager.getConnection("jdbc:sqlite:${dbFile.absolutePath}")
 
     // =========================
-    // GUARDAR LOG
+    // INSERTAR LOG
     // =========================
     fun registrarEvento(log: LogEvento) {
+
         conectar().use { conn ->
             val stmt = conn.prepareStatement(
                 """
@@ -65,7 +66,7 @@ object LogService {
     }
 
     // =========================
-    // 📊 ESTADÍSTICAS USUARIO
+    // ESTADÍSTICAS USUARIO
     // =========================
     fun obtenerEstadisticasUsuario(usuario: String): Map<String, Any> {
 
@@ -101,7 +102,7 @@ object LogService {
     }
 
     // =========================
-    // 🎯 MEJOR POR ESTÍMULO
+    // MEJOR POR ESTÍMULO
     // =========================
     fun mejorPorEstimulo(usuario: String): Map<String, Long> {
 
@@ -131,7 +132,7 @@ object LogService {
     }
 
     // =========================
-    // 🏆 RANKING TOP 3
+    // RANKING TOP 3
     // =========================
     fun rankingTop3(): List<Map<String, Any>> {
 
@@ -163,15 +164,14 @@ object LogService {
     }
 
     // =========================
-    // 📄 XML + XSLT
+    // XML SIMPLE
     // =========================
     private fun guardarEnXML(log: LogEvento) {
+
         if (!xmlFile.exists()) {
             xmlFile.parentFile.mkdirs()
             xmlFile.writeText("<logs></logs>")
         }
-
-        val xml = xmlFile.readText()
 
         val nuevo = """
             <log>
@@ -182,12 +182,12 @@ object LogService {
             </log>
         """.trimIndent()
 
-        val actualizado = xml.replace("</logs>", "$nuevo</logs>")
-        xmlFile.writeText(actualizado)
+        val actual = xmlFile.readText()
+        xmlFile.writeText(actual.replace("</logs>", "$nuevo</logs>"))
     }
 
     // =========================
-    // 📄 INFORME HTML (XSLT)
+    // XSLT → HTML
     // =========================
     fun generarInformeHtml() {
 
