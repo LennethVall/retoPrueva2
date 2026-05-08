@@ -6,18 +6,12 @@ import java.sql.Connection
 import java.sql.DriverManager
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.stream.StreamResult
+import javax.xml.transform.stream.StreamSource
 
 object LogService {
 
-    // =========================
-    // ARCHIVOS XML / XSLT
-    // =========================
-    private val xmlFile = File("src/main/resources/data/eventos.xml")
+    private val xmlFile = File("src/main/resources/data/estimulos.xml")
     private val xsltFile = File("src/main/resources/data/xslt/resumen.xslt")
-
-    // =========================
-    // BASE DE DATOS
-    // =========================
     private val dbFile = File("data.db")
 
     init {
@@ -29,9 +23,9 @@ object LogService {
                 CREATE TABLE IF NOT EXISTS logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     usuario TEXT,
-                    evento TEXT,
                     estimulo TEXT,
-                    tiempoReaccionMs INTEGER
+                    tiempoReaccionMs INTEGER,
+                    fecha TEXT
                 )
                 """.trimIndent()
             )
@@ -49,15 +43,15 @@ object LogService {
         conectar().use { conn ->
             val stmt = conn.prepareStatement(
                 """
-                INSERT INTO logs (usuario, evento, estimulo, tiempoReaccionMs)
+                INSERT INTO logs (usuario, estimulo, tiempoReaccionMs, fecha)
                 VALUES (?, ?, ?, ?)
                 """.trimIndent()
             )
 
             stmt.setString(1, log.usuario)
-            stmt.setString(2, log.evento)
-            stmt.setString(3, log.estimulo)
-            stmt.setLong(4, log.tiempoReaccionMs)
+            stmt.setString(2, log.estimulo)
+            stmt.setLong(3, log.tiempoReaccionMs)
+            stmt.setString(4, log.fecha)
 
             stmt.executeUpdate()
         }
@@ -90,15 +84,15 @@ object LogService {
 
             if (rs.next()) {
                 return mapOf(
-                    "media" to rs.getDouble("media"),
-                    "mejor" to rs.getLong("mejor"),
-                    "peor" to rs.getLong("peor"),
-                    "clicks" to rs.getInt("clicks")
+                    "media" to (rs.getDouble("media") ?: 0.0),
+                    "mejor" to (rs.getLong("mejor") ?: 0),
+                    "peor" to (rs.getLong("peor") ?: 0),
+                    "clicks" to (rs.getInt("clicks") ?: 0)
                 )
             }
         }
 
-        return mapOf("media" to 0, "mejor" to 0, "peor" to 0, "clicks" to 0)
+        return mapOf("media" to 0.0, "mejor" to 0L, "peor" to 0L, "clicks" to 0)
     }
 
     // =========================
@@ -164,7 +158,7 @@ object LogService {
     }
 
     // =========================
-    // XML SIMPLE
+    // XML
     // =========================
     private fun guardarEnXML(log: LogEvento) {
 
@@ -176,9 +170,9 @@ object LogService {
         val nuevo = """
             <log>
                 <usuario>${log.usuario}</usuario>
-                <evento>${log.evento}</evento>
                 <estimulo>${log.estimulo}</estimulo>
                 <tiempo>${log.tiempoReaccionMs}</tiempo>
+                <fecha>${log.fecha}</fecha>
             </log>
         """.trimIndent()
 
@@ -186,9 +180,6 @@ object LogService {
         xmlFile.writeText(actual.replace("</logs>", "$nuevo</logs>"))
     }
 
-    // =========================
-    // XSLT → HTML
-    // =========================
     fun generarInformeHtml() {
 
         val outputFile = File("informe_resultados.html")
@@ -196,10 +187,10 @@ object LogService {
         if (xmlFile.exists() && xsltFile.exists()) {
 
             val transformer = TransformerFactory.newInstance()
-                .newTransformer(javax.xml.transform.stream.StreamSource(xsltFile))
+                .newTransformer(StreamSource(xsltFile))
 
             transformer.transform(
-                javax.xml.transform.stream.StreamSource(xmlFile),
+                StreamSource(xmlFile),
                 StreamResult(outputFile)
             )
         }
