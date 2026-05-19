@@ -13,22 +13,6 @@ body {
     font-family: Arial, sans-serif;
 }
 
-.contador-box {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    text-align: right;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(4px);
-}
-
-#contador {
-    font-size: 2rem;
-    font-weight: bold;
-}
 
 #resultado {
     position: absolute;
@@ -153,4 +137,50 @@ body {
             2px -2px 0 white,
             -2px  2px 0 white,
             2px  2px 0 white;
+}
+/* ========================================================
+   🛠️ ARREGLO DE VISIBILIDAD PARA EL PANEL DE ESTADÍSTICAS
+   ======================================================== */
+
+/* Fuerza a que las tarjetas de los estímulos tengan el fondo oscuro correcto */
+#contenidoPanel .bg-dark {
+    background-color: rgba(20, 20, 20, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Hace que las palabras FONDO, SONIDO, IMAGEN, FRASE se lean en azul cian brillante */
+#contenidoPanel small.text-info {
+    color: #0dcaf0 !important;
+    font-weight: 800 !important;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* Asegura que los milisegundos (ms) se vean en blanco puro sin resaltar */
+#contenidoPanel span.text-white {
+    color: #ffffff !important;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+/* Arreglo para la lista del Ranking Top 3 (evita textos fantasmas) */
+#contenidoPanel .list-group-item {
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Escudo anti-desplazamiento para el centrado absoluto */
+#resultado, #imagenRandom {
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    text-align: center !important;
+}
+
+/* Fuerza el centrado específico para la imagen y la frase */
+#imagenRandom img, #imagenRandom .frase {
+    display: block !important;
+    margin: 0 auto !important;
 }

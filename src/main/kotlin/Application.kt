@@ -26,10 +26,40 @@ fun main() {
 
         routing {
 
-            staticFiles("/", File(".")) {
-                default("index.html")
+            // Servimos carpetas y archivos directamente desde tu raíz real (css, js, etc.)
+            staticFiles("/", File("."))
+
+            // 🛠️ REVISIÓN CRÍTICA: En vez de redirigir a un archivo que puede sufrir caché,
+            // forzamos al backend a leer el HTML fresco generado y responderlo en vivo.
+            get("/generar-informe") {
+                try {
+                    LogService.generarInformeHtml()
+
+                    // Buscamos el archivo generado en el espacio activo
+                    val informeFile = File("informe_resultados.html")
+
+                    if (informeFile.exists()) {
+                        val contenidoHtml = informeFile.readText()
+                        call.respondText(contenidoHtml, ContentType.Text.Html)
+                    } else {
+                        // Plan B: Intentamos leerlo de la carpeta build si Gradle desvió la ruta
+                        val informeBuildFile = File("build/resources/main/informe_resultados.html")
+                        if (informeBuildFile.exists()) {
+                            call.respondText(informeBuildFile.readText(), ContentType.Text.Html)
+                        } else {
+                            call.respond(HttpStatusCode.NotFound, "El motor XSLT terminó pero el sistema operativo no encuentra el HTML.")
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        "Error generando el informe físico mediante XSLT"
+                    )
+                }
             }
 
+            // Registro de eventos
             post("/log") {
                 try {
                     val log = call.receive<LogEvento>()
@@ -37,82 +67,43 @@ fun main() {
 
                     call.respond(
                         HttpStatusCode.OK,
-                        mapOf(
-                            "ok" to true,
-                            "mensaje" to "Log registrado correctamente"
-                        )
+                        mapOf("ok" to true, "mensaje" to "Log registrado correctamente")
                     )
                 } catch (e: Exception) {
                     e.printStackTrace()
                     call.respond(
                         HttpStatusCode.BadRequest,
-                        mapOf(
-                            "ok" to false,
-                            "mensaje" to "Error registrando log"
-                        )
+                        mapOf("ok" to false, "mensaje" to "Error registrando log")
                     )
                 }
             }
 
+            // Estadísticas de usuario
             get("/stats/{usuario}") {
                 val usuario = call.parameters["usuario"]
-                    ?: return@get call.respond(
-                        HttpStatusCode.BadRequest,
-                        mapOf("error" to "Usuario no informado")
-                    )
-
+                    ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Usuario no informado"))
                 call.respond(LogService.obtenerEstadisticasUsuario(usuario))
             }
 
+            // Estadísticas por estímulo
             get("/stats/estimulos/{usuario}") {
                 val usuario = call.parameters["usuario"]
-                    ?: return@get call.respond(
-                        HttpStatusCode.BadRequest,
-                        mapOf("error" to "Usuario no informado")
-                    )
-
+                    ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Usuario no informado"))
                 call.respond(LogService.mejorPorEstimulo(usuario))
             }
 
+            // Ranking Top 3
             get("/ranking") {
                 call.respond(LogService.rankingTop3())
             }
 
-            get("/generar-informe") {
-                try {
-                    LogService.generarInformeHtml()
-                    val file = File("informe_resultados.html")
-
-                    if (file.exists()) {
-                        call.respondFile(file)
-                    } else {
-                        call.respond(
-                            HttpStatusCode.NotFound,
-                            "No se pudo generar el informe"
-                        )
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    call.respond(
-                        HttpStatusCode.InternalServerError,
-                        "Error generando informe"
-                    )
-                }
-            }
-
+            // Visualizar XML crudo
             get("/ver-xml") {
                 val path = Paths.get("src/main/resources/data/estimulos.xml")
-
                 if (Files.exists(path)) {
-                    call.respondText(
-                        Files.readString(path),
-                        ContentType.Text.Xml
-                    )
+                    call.respondText(Files.readString(path), ContentType.Text.Xml)
                 } else {
-                    call.respond(
-                        HttpStatusCode.NotFound,
-                        "No existe el XML"
-                    )
+                    call.respond(HttpStatusCode.NotFound, "No existe el XML")
                 }
             }
         }

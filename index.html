@@ -10,41 +10,41 @@
 </head>
 <body>
 
-<div class="contador-box">
-    <h4>¿Cuántos clicks necesito?</h4>
-    <div id="contador">0</div>
-</div>
 
-<div id="resultado" class="text-center fw-bold rounded-4 shadow-lg"></div>
-<div id="imagenRandom" class="text-center"></div>
+<div id="resultado"></div>
+<div id="imagenRandom"></div>
 
-<button id="botonMisterioso" class="btn btn-primary btn-lg px-5 py-3">
+<button id="botonMisterioso" class="btn btn-primary btn-lg px-5 py-3 shadow-lg rounded-pill fw-bold text-uppercase">
     Púlsame
 </button>
 
-<script src="js/script.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <button class="btn btn-outline-light rounded-circle shadow" type="button"
         data-bs-toggle="offcanvas" data-bs-target="#panelResultados"
-        style="position: fixed; bottom: 20px; left: 20px; z-index: 10001; backdrop-filter: blur(5px);">
+        style="position: fixed; bottom: 20px; left: 20px; z-index: 10001; backdrop-filter: blur(5px); width: 50px; height: 50px;">
     📊
 </button>
 
 <div class="offcanvas offcanvas-end" tabindex="-1" id="panelResultados"
      style="background: rgba(0,0,0,0.8); color: white; backdrop-filter: blur(10px); width: 350px;">
+
     <div class="offcanvas-header border-bottom border-secondary">
-        <h5 class="offcanvas-title">📈 Mis Estadísticas</h5>
+        <h5 class="offcanvas-title fw-bold text-info">📈 Mis Estadísticas</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
     </div>
-    <div class="offcanvas-body" id="contenidoPanel">
-        <div class="text-center">
-            <div class="spinner-border text-info" role="status"></div>
-            <p>Cargando datos del servidor...</p>
+
+    <div class="offcanvas-body d-flex flex-column justify-content-between" id="contenidoPanel">
+        <div id="loading-spinner" class="text-center my-auto">
+            <div class="spinner-border text-info mb-2" role="status"></div>
+            <p class="text-muted small">Cargando datos del servidor...</p>
         </div>
+        <div id="datos-servidor" class="d-none"></div>
     </div>
-    <div class="p-3 border-top border-secondary">
-        <a href="/generar-informe" target="_blank" class="btn btn-info w-100">Ver Informe Completo (PDF/HTML)</a>
-    </div>
+
+
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/script.js"></script>
 </body>
 </html>

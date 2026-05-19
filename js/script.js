@@ -1,59 +1,65 @@
-let usuario = "Anonimo";
+let usuario = "";
 let clicks = 0;
 let estimuloActual = "";
 let tiempoInicioEstimulo = 0;
-let esperandoRespuesta = false;
 
 const boton = document.getElementById("botonMisterioso");
 const contador = document.getElementById("contador");
 const resultado = document.getElementById("resultado");
 const imagenRandom = document.getElementById("imagenRandom");
 
+// 🛠️ INICIALIZACIÓN SEGURA: Esperamos a que el DOM esté listo y damos un respiro al navegador
 window.onload = function () {
-    usuario = prompt("Introduce tu nombre o nick:") || "Anonimo";
+    localStorage.clear();
+    sessionStorage.clear();
 
-    if (resultado) {
-        resultado.innerText = "Bienvenido, " + usuario;
-    }
+    // Pequeño retardo (200ms) para que el navegador renderice la UI antes de bloquear el hilo con el prompt
+    setTimeout(() => {
+        let nombreMetido = prompt("Introduce tu nombre o nick para jugar:");
 
-    refrescarPanel();
+        usuario = (!nombreMetido || nombreMetido.trim() === "") ? "Jugador_Nuevo" : nombreMetido.trim();
+
+        if (resultado) {
+            resultado.innerText = "Bienvenido, " + usuario;
+        }
+
+        // Solo lanzamos las peticiones al servidor cuando el nombre es seguro
+        refrescarPanel();
+    }, 200);
 };
 
 if (boton) {
     boton.addEventListener("click", generarEstimulo);
 }
 
-document.addEventListener("click", function (e) {
-    if (!esperandoRespuesta) return;
-    if (e.target === boton) return;
-
-    const tiempoReaccionMs = Date.now() - tiempoInicioEstimulo;
-    esperandoRespuesta = false;
-
-    registrarLog(estimuloActual, tiempoReaccionMs);
-});
-
 function generarEstimulo() {
     clicks++;
-    if (contador) contador.innerText = clicks;
 
+
+    const ahora = Date.now();
+
+    // 🛠️ FILTRO CRÍTICO: Solo se envía el log si ya existía un estímulo REAL previo
+    if (tiempoInicioEstimulo > 0 && estimuloActual !== "") {
+        const tiempoReaccionMs = ahora - tiempoInicioEstimulo;
+        if (tiempoReaccionMs > 10) {
+            registrarLog(estimuloActual, tiempoReaccionMs);
+        }
+    }
+
+    tiempoInicioEstimulo = ahora;
     limpiarZonaVisual();
 
     const acciones = [
-        { nombre: "fondo", fn: cambiarFondo },
-        { nombre: "sonido", fn: reproducirSonido },
-        { nombre: "imagen", fn: mostrarImagen },
-        { nombre: "frase", fn: mostrarFrase }
+        { nombre: "FONDO", fn: cambiarFondo },
+        { nombre: "SONIDO", fn: reproducirSonido },
+        { nombre: "IMAGEN", fn: mostrarImagen },
+        { nombre: "FRASE", fn: mostrarFrase }
     ];
 
     const elegido = acciones[Math.floor(Math.random() * acciones.length)];
     estimuloActual = elegido.nombre;
 
     elegido.fn();
-
-    tiempoInicioEstimulo = Date.now();
-    esperandoRespuesta = true;
-
     cambiarColorBoton();
     moverBoton();
     animarBoton();
@@ -62,40 +68,21 @@ function generarEstimulo() {
 function registrarLog(estimulo, tiempoReaccionMs) {
     fetch("/log", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             usuario: usuario,
             estimulo: estimulo,
             tiempoReaccionMs: tiempoReaccionMs,
-            fecha: new Date().toISOString()
+            fecha: new Date().toLocaleString("es-ES")
         })
     })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Error al guardar log");
-            }
-            return response.text().catch(() => "");
-        })
-        .then(() => {
-            if (resultado) {
-                resultado.innerText = `Respuesta registrada: ${tiempoReaccionMs} ms`;
-            }
-            refrescarPanel();
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            if (resultado) {
-                resultado.innerText = "No se pudo guardar el registro";
-            }
-        });
+        .then(response => { if (!response.ok) throw new Error("Error al guardar log"); return response.json(); })
+        .then(() => refrescarPanel())
+        .catch(error => console.error("Error registrando evento en Ktor:", error));
 }
 
 function limpiarZonaVisual() {
-    if (imagenRandom) {
-        imagenRandom.innerHTML = "";
-    }
+    if (imagenRandom) imagenRandom.innerHTML = "";
 }
 
 function cambiarColorBoton() {
@@ -106,9 +93,7 @@ function cambiarColorBoton() {
 
 function animarBoton() {
     boton.style.transform = "scale(1.1)";
-    setTimeout(() => {
-        boton.style.transform = "scale(1)";
-    }, 150);
+    setTimeout(() => { boton.style.transform = "scale(1)"; }, 150);
 }
 
 function moverBoton() {
@@ -118,9 +103,7 @@ function moverBoton() {
         { bottom: "20px", left: "20px", top: "auto", right: "auto" },
         { bottom: "20px", right: "20px", top: "auto", left: "auto" }
     ];
-
     const pos = posiciones[Math.floor(Math.random() * posiciones.length)];
-
     boton.style.top = pos.top;
     boton.style.bottom = pos.bottom;
     boton.style.left = pos.left;
@@ -129,163 +112,89 @@ function moverBoton() {
 
 function cambiarFondo() {
     const index = Math.floor(Math.random() * 28) + 1;
-
-    const rutas = [
-        `background/background${index}.jpg`,
-        `background/background${index}.png`
-    ];
-
-    cargarPrimeraValida(rutas, function (url) {
+    const rutas = [`background/background${index}.jpg`, `background/background${index}.png`];
+    cargarPrimeraValida(rutas, (url) => {
         document.body.style.backgroundImage = `url('${url}')`;
         document.body.style.backgroundSize = "cover";
         document.body.style.backgroundPosition = "center";
         document.body.style.backgroundRepeat = "no-repeat";
-
-        if (resultado) resultado.innerText = "Fondo cambiado";
-    }, function () {
-        if (resultado) resultado.innerText = "No se encontró el fondo";
     });
 }
 
 function mostrarImagen() {
     const index = Math.floor(Math.random() * 28) + 1;
-
-    const rutas = [
-        `img/img${index}.png`,
-        `img/img${index}.jpg`,
-        `img/img${index}.jpeg`
-    ];
-
-    cargarPrimeraValida(rutas, function (url) {
-        imagenRandom.innerHTML = `<img src="${url}" alt="Imagen aleatoria">`;
-        if (resultado) resultado.innerText = "Imagen mostrada";
-    }, function () {
-        if (resultado) resultado.innerText = "No se encontró la imagen";
+    const rutas = [`img/img${index}.png`, `img/img${index}.jpg`, `img/img${index}.jpeg`];
+    cargarPrimeraValida(rutas, (url) => {
+        imagenRandom.innerHTML = `<img src="${url}" alt="Imagen aleatoria" style="max-height: 300px; border-radius: 10px;">`;
     });
 }
 
 function mostrarFrase() {
-    const frases = [
-        "Nunca sabes lo que pasará al hacer click.",
-        "Prueba tu suerte, ¡va a ser algo grande!",
-        "Un regalo en cada click.",
-        "Click, click, click... ¿qué será lo siguiente?",
-        "Yo tampoco puedo parar de hacer click.",
-        "Solo un click más... solo un click más...",
-        "¿Eso ha sido un sonido o te ha pitado el oído?",
-        "¡Ups! He movido algo, espero que te guste el nuevo look.",
-        "El algoritmo dice que ahora te toca algo... especial.",
-        "¿Has visto eso? Yo tampoco, pero ha sonado genial.",
-        "Espera, que estoy cargando la siguiente sorpresa...",
-        "No parpadees, que el fondo puede cambiar.",
-        "Un píxel acaba de nacer gracias a ti.",
-        "Si pulsas 100 veces, no pasa nada... ¿o sí?",
-        "Tu pantalla se está poniendo nerviosa.",
-        "Ese click ha sonado a gloria bendita.",
-        "Advertencia: este botón causa niveles altos de curiosidad.",
-        "El orden es aburrido, ¡viva el caos!",
-        "¿Has sido tú o ha sido la aplicación?",
-        "Si ves un unicornio, es que has pulsado demasiado rápido.",
-        "¡Zas! En toda la interfaz!",
-        "Instalando dosis de aleatoriedad... 99%.",
-        "He cambiado las cortinas, espero que no te importe.",
-        "El siguiente click es el bueno, lo presiento.",
-        "Ni yo sé qué va a pasar ahora mismo.",
-        "Pulsa como si no hubiera un mañana.",
-        "¡Otra vez! ¡Otra vez!",
-        "¿Crees que puedes verlo todo? Sigue intentándolo."
-    ];
-
+    const frases = ["Nunca sabes lo que pasará al hacer click.", "Prueba tu suerte, ¡va a ser algo grande!", "Un regalo en cada click.", "Click, click, click...", "El orden es aburrido, ¡viva el caos!", "Solo un click más..."];
     const frase = frases[Math.floor(Math.random() * frases.length)];
-    imagenRandom.innerHTML = `<div class="frase">${frase}</div>`;
-    if (resultado) resultado.innerText = "Frase mostrada";
+    imagenRandom.innerHTML = `<div class="frase h3 text-white p-3 rounded" style="background: rgba(0,0,0,0.6);">${frase}</div>`;
 }
 
 function reproducirSonido() {
     const index = Math.floor(Math.random() * 28) + 1;
-    const audio = new Audio(`sounds/sound${index}.mp3`);
-
-    audio.play()
-        .then(() => {
-            if (resultado) resultado.innerText = "Sonido reproducido";
-        })
-        .catch(() => {
-            if (resultado) resultado.innerText = "No se pudo reproducir el sonido";
-        });
+    new Audio(`sounds/sound${index}.mp3`).play().catch(() => {});
 }
 
-function cargarPrimeraValida(rutas, onSuccess, onError) {
+function cargarPrimeraValida(rutas, onSuccess) {
     let i = 0;
-
     function probar() {
-        if (i >= rutas.length) {
-            if (onError) onError();
-            return;
-        }
-
+        if (i >= rutas.length) return;
         const img = new Image();
-        img.onload = function () {
-            onSuccess(rutas[i]);
-        };
-        img.onerror = function () {
-            i++;
-            probar();
-        };
+        img.onload = () => onSuccess(rutas[i]);
+        img.onerror = () => { i++; probar(); };
         img.src = rutas[i];
     }
-
     probar();
 }
 
 function refrescarPanel() {
-    cargarResumenUsuario();
-    cargarRanking();
-}
+    const contenidoPanel = document.getElementById("contenidoPanel");
+    if (!contenidoPanel || !usuario) return;
 
-function cargarResumenUsuario() {
-    fetch(`/stats/${encodeURIComponent(usuario)}`)
-        .then(r => r.json())
-        .then(data => {
-            const box = document.getElementById("statsUsuario");
-            if (!box) return;
+    Promise.all([
+        fetch(`/stats/${encodeURIComponent(usuario)}`).then(r => r.ok ? r.json() : null),
+        fetch(`/stats/estimulos/${encodeURIComponent(usuario)}`).then(r => r.ok ? r.json() : null),
+        fetch("/ranking").then(r => r.ok ? r.json() : [])
+    ])
+        .then(([stats, estimulos, ranking]) => {
+            let statsHtml = `
+            <div class="mb-4">
+                <h6 class="text-info text-uppercase small fw-bold mb-3">📋 Resumen de ${usuario}</h6>
+                <div class="list-group list-group-flush shadow-sm rounded border border-secondary">
+                    <div class="list-group-item bg-transparent text-white d-flex justify-content-between">
+                        <span>🎯 Clicks:</span> <span class="fw-bold text-warning">${stats?.clicks ?? 0}</span>
+                    </div>
+                    <div class="list-group-item bg-transparent text-white d-flex justify-content-between">
+                        <span>⚡ Mejor:</span> <span class="badge bg-success rounded-pill">${stats?.mejor ?? 0} ms</span>
+                    </div>
+                    <div class="list-group-item bg-transparent text-white d-flex justify-content-between">
+                        <span>📊 Media:</span> <span class="fw-bold text-info">${Math.round(stats?.media ?? 0)} ms</span>
+                    </div>
+                </div>
+            </div>`;
 
-            box.innerHTML = `
-                <div><strong>Usuario:</strong> ${usuario}</div>
-                <div><strong>Clicks:</strong> ${data.clicks ?? 0}</div>
-                <div><strong>Mejor tiempo:</strong> ${data.mejor ?? 0} ms</div>
-                <div><strong>Peor tiempo:</strong> ${data.peor ?? 0} ms</div>
-                <div><strong>Media:</strong> ${Math.round(data.media ?? 0)} ms</div>
-            `;
+            let estimulosHtml = `<div class="mb-4"><h6 class="text-info text-uppercase small fw-bold mb-2">⏱️ Mejor por Estímulo</h6><div class="row g-2">`;
+            if (estimulos && Object.keys(estimulos).length > 0) {
+                for (const est in estimulos) {
+                    estimulosHtml += `<div class="col-6"><div class="p-2 rounded border border-secondary text-center bg-dark bg-opacity-70"><small class="text-info text-uppercase fw-bold d-block">${est}</small><span class="fw-bold text-white">${estimulos[est]} ms</span></div></div>`;
+                }
+            } else { estimulosHtml += `<p class="text-muted small ps-2">Esperando eventos...</p>`; }
+            estimulosHtml += `</div></div>`;
+
+            let rankingHtml = `<div class="mb-3"><h6 class="text-info text-uppercase small fw-bold mb-3">🏆 Líderes (Media)</h6><ol class="list-group list-group-numbered border border-secondary rounded">`;
+            if (ranking && ranking.length > 0) {
+                ranking.forEach(fila => {
+                    rankingHtml += `<li class="list-group-item bg-transparent text-white d-flex justify-content-between align-items-center border-secondary"><span class="${fila.usuario === usuario ? 'text-warning' : ''}">${fila.usuario}</span><span class="badge bg-info text-dark rounded-pill">${Math.round(fila.media ?? 0)} ms</span></li>`;
+                });
+            } else { rankingHtml += `<li class="list-group-item bg-transparent text-muted small border-0">Podio vacío.</li>`; }
+            rankingHtml += `</ol></div>`;
+
+            contenidoPanel.innerHTML = statsHtml + estimulosHtml + rankingHtml;
         })
-        .catch(err => console.error(err));
-
-    fetch(`/stats/estimulos/${encodeURIComponent(usuario)}`)
-        .then(r => r.json())
-        .then(data => {
-            const box = document.getElementById("statsEstimulos");
-            if (!box) return;
-
-            let html = "<strong>Mejor por estímulo:</strong><br>";
-            for (const estimulo in data) {
-                html += `${estimulo}: ${data[estimulo]} ms<br>`;
-            }
-            box.innerHTML = html;
-        })
-        .catch(err => console.error(err));
-}
-
-function cargarRanking() {
-    fetch("/ranking")
-        .then(r => r.json())
-        .then(data => {
-            const box = document.getElementById("rankingTop3");
-            if (!box) return;
-
-            let html = "<strong>Top 3</strong><br>";
-            data.forEach((fila, index) => {
-                html += `${index + 1}. ${fila.usuario} - ${Math.round(fila.mejorTiempo ?? fila.media ?? 0)} ms (${fila.estimulo ?? "?"})<br>`;
-            });
-            box.innerHTML = html;
-        })
-        .catch(err => console.error(err));
+        .catch(err => console.error("Error en panel:", err));
 }
