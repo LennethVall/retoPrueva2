@@ -1,50 +1,193 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
+
     <meta charset="UTF-8">
+    <!--
+        Permite que la web se adapte correctamente a distintos tamaños de pantalla.
+        Esto es especialmente importante porque Bootstrap está diseñado con enfoque responsive.
+    -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Título que aparece en la pestaña del navegador -->
     <title>Botón Misterioso</title>
 
+    <!--
+        Enlace a Bootstrap 5.3.3 desde CDN.
+        Bootstrap aporta estilos predefinidos, componentes visuales y utilidades CSS
+        que permiten construir una interfaz moderna, responsive y consistente
+        sin necesidad de escribir todo el diseño desde cero.
+    -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!--
+        Hoja de estilos propia del proyecto.
+        Se utiliza para personalizar o ampliar los estilos de Bootstrap según las necesidades de la aplicación.
+    -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
 
 <div id="resultado"></div>
+
+<!--
+    Contenedor reservado para mostrar una imagen aleatoria.
+    Igual que el anterior, se rellena dinámicamente desde el archivo script.js.
+-->
 <div id="imagenRandom"></div>
 
+<!--
+    Botón principal de la aplicación.
+    Es el elemento central con el que interactúa el usuario.
+
+    Clases de Bootstrap utilizadas:
+    - btn: aplica el estilo base de botón.
+    - btn-primary: usa el color principal de Bootstrap para destacar la acción.
+    - btn-lg: aumenta el tamaño del botón.
+    - px-5 y py-3: añaden padding horizontal y vertical.
+    - shadow-lg: agrega una sombra grande para darle relieve visual.
+    - rounded-pill: redondea completamente los bordes.
+    - fw-bold: pone el texto en negrita.
+    - text-uppercase: convierte el texto a mayúsculas.
+
+    Gracias a Bootstrap, este botón resulta más llamativo, accesible y visualmente uniforme.
+-->
 <button id="botonMisterioso" class="btn btn-primary btn-lg px-5 py-3 shadow-lg rounded-pill fw-bold text-uppercase">
     Púlsame
 </button>
 
+<!--
+    Botón flotante que abre el panel lateral de estadísticas.
+    Bootstrap permite activar componentes interactivos mediante atributos data-bs-*,
+    sin necesidad de programar manualmente toda la lógica del panel.
 
+    Clases de Bootstrap:
+    - btn: estilo base del botón.
+    - btn-outline-light: botón con borde claro y fondo transparente.
+    - rounded-circle: forma circular.
+    - shadow: añade sombra para destacarlo visualmente.
+
+    Atributos Bootstrap:
+    - data-bs-toggle="offcanvas": indica que el botón abrirá un componente offcanvas.
+    - data-bs-target="#panelResultados": enlaza este botón con el panel cuyo id es panelResultados.
+
+    El estilo inline fija la posición del botón en la esquina inferior izquierda de la pantalla.
+-->
 <button class="btn btn-outline-light rounded-circle shadow" type="button"
         data-bs-toggle="offcanvas" data-bs-target="#panelResultados"
         style="position: fixed; bottom: 20px; left: 20px; z-index: 10001; backdrop-filter: blur(5px); width: 50px; height: 50px;">
     📊
 </button>
 
+<!--
+    Panel lateral tipo offcanvas de Bootstrap.
+    Este componente aparece deslizándose desde un lateral de la pantalla
+    y es útil para mostrar información secundaria sin cambiar de página.
+
+    Clases Bootstrap:
+    - offcanvas: define el componente como un panel lateral ocultable.
+    - offcanvas-end: hace que el panel aparezca desde la derecha.
+
+    Atributos:
+    - tabindex="-1": permite gestionar mejor el foco cuando el panel se abre.
+    - id="panelResultados": identificador usado por el botón que lo activa.
+
+    Se añaden estilos personalizados para darle un fondo semitransparente oscuro
+    y un efecto de desenfoque que mejora la apariencia visual.
+-->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="panelResultados"
      style="background: rgba(0,0,0,0.8); color: white; backdrop-filter: blur(10px); width: 350px;">
 
+    <!--
+        Cabecera del panel lateral.
+        Aquí se muestra el título y el botón para cerrarlo.
+
+        Clases Bootstrap:
+        - offcanvas-header: estructura estándar de la cabecera del componente.
+        - border-bottom: añade una línea inferior.
+        - border-secondary: aplica un color secundario al borde.
+    -->
     <div class="offcanvas-header border-bottom border-secondary">
+
+        <!--
+            Título del panel.
+            - offcanvas-title: clase propia de Bootstrap para títulos dentro de offcanvas.
+            - fw-bold: resalta el texto en negrita.
+            - text-info: aplica un color informativo, útil para resaltar las estadísticas.
+        -->
         <h5 class="offcanvas-title fw-bold text-info">📈 Mis Estadísticas</h5>
+
+        <!--
+            Botón de cierre del panel lateral.
+            - btn-close: estilo Bootstrap para botón de cierre.
+            - btn-close-white: versión adaptada a fondos oscuros.
+            - data-bs-dismiss="offcanvas": cierra automáticamente el panel al pulsarlo.
+        -->
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
     </div>
 
+    <!--
+        Cuerpo principal del panel lateral.
+        Se organiza con utilidades flex de Bootstrap para distribuir mejor el contenido.
+
+        Clases Bootstrap:
+        - offcanvas-body: zona principal del componente.
+        - d-flex: activa Flexbox.
+        - flex-column: coloca los elementos en columna.
+        - justify-content-between: reparte el espacio verticalmente entre los elementos.
+    -->
     <div class="offcanvas-body d-flex flex-column justify-content-between" id="contenidoPanel">
+
+        <!--
+            Indicador de carga mostrado mientras se obtienen los datos del servidor.
+            Bootstrap incluye el componente spinner para representar visualmente procesos de espera.
+
+            Clases Bootstrap:
+            - text-center: centra el contenido horizontalmente.
+            - my-auto: aplica margen automático vertical para centrarlo dentro del panel.
+        -->
         <div id="loading-spinner" class="text-center my-auto">
+
+            <!--
+                Spinner de Bootstrap.
+                - spinner-border: crea un indicador de carga circular.
+                - text-info: le da color usando las utilidades de Bootstrap.
+                - mb-2: margen inferior para separar el spinner del texto.
+                - role="status": mejora la semántica y accesibilidad del componente.
+            -->
             <div class="spinner-border text-info mb-2" role="status"></div>
+
+            <!--
+                Texto auxiliar que informa al usuario de que los datos se están cargando.
+                - text-muted: color de texto más suave.
+                - small: tamaño de letra reducido.
+            -->
             <p class="text-muted small">Cargando datos del servidor...</p>
         </div>
+
+        <!--
+            Contenedor donde se mostrarán los datos reales recibidos del servidor.
+            - d-none: clase de Bootstrap que oculta el elemento inicialmente.
+            Más adelante, JavaScript puede quitar esta clase para mostrar la información.
+        -->
         <div id="datos-servidor" class="d-none"></div>
     </div>
-
-
 </div>
 
+<!--
+    Script JavaScript de Bootstrap.
+    Incluye la funcionalidad necesaria para que componentes interactivos como offcanvas
+    funcionen correctamente sin implementar esa lógica desde cero.
+-->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!--
+    Archivo JavaScript propio del proyecto.
+    Aquí se encuentra la lógica personalizada de la aplicación,
+    como la gestión del botón misterioso, la carga de datos y la manipulación del DOM.
+-->
 <script src="js/script.js"></script>
 </body>
 </html>

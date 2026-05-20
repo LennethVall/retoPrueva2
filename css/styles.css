@@ -1,51 +1,68 @@
+/*
+    Estilo general del cuerpo de la página.
+    Aquí se define la configuración base de toda la aplicación:
+    márgenes, altura mínima, fondo y tipografía principal.
+*/
 body {
-    margin: 0;
-    min-height: 100vh;
-    overflow: hidden;
-    position: relative;
+    margin: 0; /* Elimina el margen por defecto del navegador */
+    min-height: 100vh; /* Hace que el cuerpo ocupe como mínimo toda la altura de la ventana */
+    overflow: hidden; /* Evita barras de desplazamiento */
+    position: relative; /* Permite posicionar elementos absolutos tomando el body como referencia */
 
-    background-color: #f4f4f4;
-    background-image: none;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    background-color: #f4f4f4; /* Color de fondo claro por defecto */
+    background-image: none; /* No se asigna imagen de fondo inicialmente */
+    background-size: cover; /* Si se añade una imagen, cubrirá toda la pantalla */
+    background-position: center; /* Centra la imagen de fondo */
+    background-repeat: no-repeat; /* Evita que la imagen se repita */
 
-    font-family: Arial, sans-serif;
+    font-family: Arial, sans-serif; /* Tipografía base de la aplicación */
 }
 
-
+/*
+    Contenedor del resultado principal mostrado al usuario.
+    Se coloca en la parte superior y centrado horizontalmente.
+*/
 #resultado {
-    position: absolute;
-    top: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1000;
+    position: absolute; /* Posicionamiento libre sobre la pantalla */
+    top: 100px; /* Separación desde la parte superior */
+    left: 50%; /* Coloca el elemento a la mitad del ancho */
+    transform: translateX(-50%); /* Corrige el centrado horizontal */
+    z-index: 1000; /* Lo sitúa por encima de otros elementos */
 
-    min-width: 280px;
-    max-width: 80%;
-    padding: 14px 22px;
+    min-width: 280px; /* Anchura mínima para mantener legibilidad */
+    max-width: 80%; /* Anchura máxima adaptable al tamaño de pantalla */
+    padding: 14px 22px; /* Espaciado interior */
 
-    font-size: 1.4rem;
-    font-weight: 700;
-    text-align: center;
-    color: white;
+    font-size: 1.4rem; /* Tamaño destacado del texto */
+    font-weight: 700; /* Texto en negrita */
+    text-align: center; /* Centrado del contenido */
+    color: white; /* Texto blanco para mejor contraste */
 
-    background: rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.45); /* Fondo semitransparente oscuro */
+    border: 1px solid rgba(255, 255, 255, 0.18); /* Borde suave translúcido */
+    border-radius: 18px; /* Bordes redondeados */
 
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px); /* Desenfoque del fondo tras el elemento */
+    -webkit-backdrop-filter: blur(8px); /* Compatibilidad con navegadores WebKit */
 
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.75);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); /* Sombra exterior para dar profundidad */
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.75); /* Sombra del texto para mejorar visibilidad */
 
-    animation: aparecer 0.3s ease;
+    animation: aparecer 0.3s ease; /* Animación de entrada suave */
 }
+
+/*
+    Si el contenedor está vacío, no se muestra.
+    Así se evita dejar una caja vacía visible en pantalla.
+*/
 #resultado:empty {
     display: none;
 }
 
+/*
+    Contenedor donde se inserta una imagen aleatoria o una frase.
+    Se coloca debajo del resultado principal y centrado.
+*/
 #imagenRandom {
     position: absolute;
     top: 180px;
@@ -55,54 +72,79 @@ body {
     z-index: 1000;
 }
 
+/*
+    Estilo de la imagen generada dinámicamente.
+    Se limita su tamaño y se mejora su apariencia visual.
+*/
 #imagenRandom img {
-    max-width: 320px;
-    max-height: 320px;
-    border-radius: 14px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-    animation: aparecer 0.4s ease;
+    max-width: 320px; /* Anchura máxima */
+    max-height: 320px; /* Altura máxima */
+    border-radius: 14px; /* Bordes redondeados */
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25); /* Sombra suave */
+    animation: aparecer 0.4s ease; /* Animación de entrada */
 }
 
+/*
+    Estilo para mostrar frases en lugar de imágenes.
+    Se usa una caja semitransparente con desenfoque para mejorar la estética.
+*/
 #imagenRandom .frase {
     display: inline-block;
     padding: 16px 22px;
     border-radius: 14px;
     font-size: 1.5rem;
     font-weight: 600;
-    background: rgba(255,255,255,0.7);
-    backdrop-filter: blur(4px);
+    background: rgba(255,255,255,0.7); /* Fondo blanco translúcido */
+    backdrop-filter: blur(4px); /* Efecto visual de cristal */
     animation: aparecer 0.4s ease;
 }
 
+/*
+    Definición de la animación "aparecer".
+    Hace que un elemento surja gradualmente con desplazamiento vertical.
+*/
 @keyframes aparecer {
     from {
-        opacity: 0;
-        transform: translateY(10px);
+        opacity: 0; /* Comienza invisible */
+        transform: translateY(10px); /* Comienza ligeramente desplazado hacia abajo */
     }
     to {
-        opacity: 1;
-        transform: translateY(0);
+        opacity: 1; /* Termina completamente visible */
+        transform: translateY(0); /* Recupera su posición normal */
     }
 }
 
+/*
+    Estilo del botón principal de la aplicación.
+    Aunque Bootstrap le da el diseño base, aquí se controla su posición
+    y sus transiciones personalizadas.
+*/
 #botonMisterioso {
-    position: absolute;
-    z-index: 9999;
+    position: absolute; /* Permite mover el botón libremente por pantalla */
+    z-index: 9999; /* Lo mantiene por delante de casi todos los elementos */
 
-    top:50%;
-    left: 50%;
+    top:50%; /* Posición vertical inicial */
+    left: 50%; /* Posición horizontal inicial */
 
     transition:
-            top 0.3s ease-out,
-            left 0.3s ease-out,
-            background-color 0.3s ease,
-            transform 0.2s ease;
+            top 0.3s ease-out, /* Suaviza cambios en posición vertical */
+            left 0.3s ease-out, /* Suaviza cambios en posición horizontal */
+            background-color 0.3s ease, /* Suaviza cambios de color */
+            transform 0.2s ease; /* Suaviza transformaciones */
 }
 
+/*
+    Efecto visual al pulsar el botón.
+    Se reduce ligeramente su tamaño para simular presión.
+*/
 #botonMisterioso:active {
     transform: scale(0.95);
 }
 
+/*
+    Pseudoelemento decorativo que crea un halo luminoso alrededor del botón.
+    Este efecto aporta un toque visual extra al movimiento.
+*/
 #botonMisterioso::after {
     content: "";
     position: absolute;
@@ -112,15 +154,23 @@ body {
     left: -15%;
     border-radius: 50%;
     background: radial-gradient(rgba(255,255,255,0.45), rgba(255,255,255,0));
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    pointer-events: none;
+    opacity: 0; /* Inicialmente invisible */
+    transition: opacity 0.4s ease; /* Aparición suave */
+    pointer-events: none; /* No interfiere con los clics */
 }
 
+/*
+    Cuando el botón tiene la clase "moving",
+    el halo se vuelve visible para reforzar la sensación de movimiento.
+*/
 #botonMisterioso.moving::after {
     opacity: 1;
 }
 
+/*
+    Clase auxiliar para texto blanco con borde negro simulado mediante sombras.
+    Se usa para asegurar legibilidad sobre fondos claros o complejos.
+*/
 .text-blanco-borde-negro {
     color: white !important;
     text-shadow:
@@ -130,6 +180,10 @@ body {
             2px  2px 0 black;
 }
 
+/*
+    Clase auxiliar para texto negro con borde blanco.
+    Útil cuando el fondo es oscuro y se necesita resaltar el texto.
+*/
 .text-negro-borde-blanco {
     color: black !important;
     text-shadow:
@@ -138,17 +192,25 @@ body {
             -2px  2px 0 white,
             2px  2px 0 white;
 }
+
 /* ========================================================
-   🛠️ ARREGLO DE VISIBILIDAD PARA EL PANEL DE ESTADÍSTICAS
+   AJUSTES VISUALES PARA EL PANEL DE ESTADÍSTICAS
    ======================================================== */
 
-/* Fuerza a que las tarjetas de los estímulos tengan el fondo oscuro correcto */
+/*
+    Fuerza un fondo oscuro translúcido en las tarjetas del panel de estadísticas.
+    Esto corrige posibles problemas de visibilidad y mantiene coherencia visual.
+*/
 #contenidoPanel .bg-dark {
     background-color: rgba(20, 20, 20, 0.8) !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
-/* Hace que las palabras FONDO, SONIDO, IMAGEN, FRASE se lean en azul cian brillante */
+/*
+    Resalta las etiquetas informativas del panel, como FONDO, SONIDO, IMAGEN o FRASE.
+    Se usa un color cian brillante para que destaquen claramente.
+    Esta parte complementa las utilidades de color de Bootstrap, como text-info.
+*/
 #contenidoPanel small.text-info {
     color: #0dcaf0 !important;
     font-weight: 800 !important;
@@ -156,20 +218,30 @@ body {
     text-transform: uppercase;
 }
 
-/* Asegura que los milisegundos (ms) se vean en blanco puro sin resaltar */
+/*
+    Asegura que los tiempos medidos en milisegundos se vean en blanco puro
+    y con mayor tamaño para facilitar la lectura.
+    Se aplica sobre elementos que ya usan la clase Bootstrap text-white.
+*/
 #contenidoPanel span.text-white {
     color: #ffffff !important;
     font-size: 1.1rem;
     font-weight: bold;
 }
 
-/* Arreglo para la lista del Ranking Top 3 (evita textos fantasmas) */
+/*
+    Ajuste específico para los elementos de la lista del ranking.
+    Evita problemas de contraste o bordes poco visibles.
+*/
 #contenidoPanel .list-group-item {
     color: #ffffff !important;
     border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Escudo anti-desplazamiento para el centrado absoluto */
+/*
+    Refuerzo del centrado absoluto para los bloques principales.
+    Se usa !important para evitar que otros estilos alteren su posición.
+*/
 #resultado, #imagenRandom {
     position: absolute !important;
     left: 50% !important;
@@ -179,7 +251,10 @@ body {
     text-align: center !important;
 }
 
-/* Fuerza el centrado específico para la imagen y la frase */
+/*
+    Fuerza el centrado interno de las imágenes y frases generadas.
+    Así se asegura una presentación visual equilibrada.
+*/
 #imagenRandom img, #imagenRandom .frase {
     display: block !important;
     margin: 0 auto !important;
