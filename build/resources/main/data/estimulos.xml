@@ -715,4 +715,70 @@
     <tiempo>11256</tiempo>
     <fecha>20/5/2026, 8:10:40</fecha>
 </log>
+<log>
+    <usuario>ines</usuario>
+    <estimulo>SONIDO</estimulo>
+    <tiempo>1217</tiempo>
+    <fecha>20/5/2026, 9:34:19</fecha>
+</log>
+<log>
+    <usuario>ines</usuario>
+    <estimulo>FRASE</estimulo>
+    <tiempo>1687</tiempo>
+    <fecha>20/5/2026, 9:34:21</fecha>
+</log>
+<log>
+    <usuario>ines</usuario>
+    <estimulo>SONIDO</estimulo>
+    <tiempo>1016</tiempo>
+    <fecha>20/5/2026, 9:34:22</fecha>
+</log>
+<log>
+    <usuario>ines</usuario>
+    <estimulo>IMAGEN</estimulo>
+    <tiempo>1144</tiempo>
+    <fecha>20/5/2026, 9:34:23</fecha>
+</log>
+<log>
+    <usuario>ines</usuario>
+    <estimulo>IMAGEN</estimulo>
+    <tiempo>1240</tiempo>
+    <fecha>20/5/2026, 9:34:24</fecha>
+</log>
+<log>
+    <usuario>ines</usuario>
+    <estimulo>FONDO</estimulo>
+    <tiempo>931</tiempo>
+    <fecha>20/5/2026, 9:34:25</fecha>
+</log>
+<log>
+    <usuario>ines</usuario>
+    <estimulo>FONDO</estimulo>
+    <tiempo>1453</tiempo>
+    <fecha>20/5/2026, 9:34:26</fecha>
+</log>
+<log>
+    <usuario>ines</usuario>
+    <estimulo>FONDO</estimulo>
+    <tiempo>4224</tiempo>
+    <fecha>20/5/2026, 9:34:31</fecha>
+</log>
+<log>
+    <usuario>ines</usuario>
+    <estimulo>SONIDO</estimulo>
+    <tiempo>46002</tiempo>
+    <fecha>20/5/2026, 9:35:17</fecha>
+</log>
+<log>
+    <usuario>ines</usuario>
+    <estimulo>SONIDO</estimulo>
+    <tiempo>768</tiempo>
+    <fecha>20/5/2026, 9:35:17</fecha>
+</log>
+<log>
+    <usuario>ines</usuario>
+    <estimulo>SONIDO</estimulo>
+    <tiempo>903</tiempo>
+    <fecha>20/5/2026, 9:35:18</fecha>
+</log>
 </logs>>

@@ -99,9 +99,9 @@ object LogService {
     private fun conectar(): Connection =
         DriverManager.getConnection("jdbc:sqlite:${dbFile.absolutePath}")
 
-    // =========================
+
     // INSERTAR LOG
-    // =========================
+
 
     /**
      * Registra un evento en la base de datos y también en el XML.
@@ -136,9 +136,9 @@ object LogService {
         guardarEnXML(log)
     }
 
-    // =========================
+
     // ESTADÍSTICAS USUARIO
-    // =========================
+
 
     /**
      * Obtiene estadísticas agregadas de un usuario concreto.
@@ -188,9 +188,9 @@ object LogService {
         return mapOf("media" to 0.0, "mejor" to 0L, "peor" to 0L, "clicks" to 0)
     }
 
-    // =========================
+
     // MEJOR POR ESTÍMULO
-    // =========================
+
 
     /**
      * Obtiene el mejor tiempo del usuario para cada tipo de estímulo.
@@ -224,9 +224,9 @@ object LogService {
         return resultado
     }
 
-    // =========================
+
     // RANKING TOP 3
-    // =========================
+
 
     /**
      * Calcula el ranking global de los tres mejores usuarios
@@ -262,9 +262,9 @@ object LogService {
         return lista
     }
 
-    // =========================
+
     // XML PERSISTENCIA ROBUSTA
-    // =========================
+
 
     /**
      * Guarda un evento también en el archivo XML.
@@ -312,9 +312,9 @@ object LogService {
         xmlFile.writeText(actual)
     }
 
-    // =====================================
+
     // TRANSFORMACIÓN XSLT ROBUSTA EN DISCO
-    // =====================================
+
 
     /**
      * Genera un informe HTML a partir del XML usando una plantilla XSLT.
